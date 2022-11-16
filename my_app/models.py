@@ -1,3 +1,177 @@
 from django.db import models
 
 # Create your models here.
+
+
+class user(models.Model):  # User is a class that inherits from models.Model
+    user_id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=256, unique=False)
+    password = models.CharField(max_length=256, unique=False)
+    email = models.CharField(max_length=256, unique=True)
+    address = models.CharField(max_length)
+    identity = models.IntegerField(unique=False)
+    intro = models.CharField(max_length=256, unique=False)
+    penalty = models.BooleanField(default=False)
+    birthday = models.DateField()
+    team_id = models.IntegerField(unique=False)
+    real_name = models.CharField(max_length=256, unique=False)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        db_table = 'user'  # 指明数据库表名
+        ordering = ['user_id']  # 按照id排序
+        verbose_name = 'user'  # 单数形式
+        verbose_name_plural = 'users'  # 复数形式
+
+
+class admin(models.Model):  # Admin is a class that inherits from models.Model
+    admin_id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=256, unique=False)
+    password = models.CharField(max_length=256, unique=False)
+    email = models.CharField(max_length=256, unique=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        db_table = 'admin'  # 指明数据库表名
+        ordering = ['admin_id']  # 按照id排序
+        verbose_name = 'admin'  # 单数形式
+        verbose_name_plural = 'admins'  # 复数形式
+
+
+class achievement(models.Model):  # Achievement is a class that inherits from models.Model
+    achievement_id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=256, unique=True)
+    author_id = models.CharField(max_length=256, unique=False)
+    intro = models.CharField(max_length=256, unique=False)
+    url = models.CharField(max_length=256, unique=False)
+    create_time = models.DateTimeField(auto_now_add=True)
+    type = models.IntegerField(unique=False)
+    area = models.CharField(max_length=256, unique=False)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        db_table = 'achievement'  # 指明数据库表名
+        ordering = ['achievement_id']  # 按照id排序
+        verbose_name = 'achievement'  # 单数形式
+        verbose_name_plural = 'achievements'  # 复数形式
+
+
+class team(models.Model):  # Team is a class that inherits from models.Model
+    team_id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=256, unique=True)
+    intro = models.CharField(max_length=256, unique=False)
+    create_time = models.DateTimeField(auto_now_add=True)
+    user_list = models.CharField(max_length=256, unique=False)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        db_table = 'team'  # 指明数据库表名
+        ordering = ['team_id']  # 按照id排序
+        verbose_name = 'team'  # 单数形式
+        verbose_name_plural = 'teams'  # 复数形式
+
+
+class like(models.Model):  # Like is a class that inherits from models.Model
+    like_id = models.AutoField(primary_key=True)
+    user_id = models.IntegerField(unique=False)
+    achievement_id = models.IntegerField(unique=False)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        db_table = 'like'  # 指明数据库表名
+        ordering = ['like_id']  # 按照id排序
+        verbose_name = 'like'  # 单数形式
+        verbose_name_plural = 'likes'  # 复数形式
+
+
+class follow(models.Model):  # Follow is a class that inherits from models.Model
+    follow_id = models.AutoField(primary_key=True)
+    user1_id = models.IntegerField(unique=False)
+    user2_id = models.IntegerField(unique=False)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        db_table = 'follow'  # 指明数据库表名
+        ordering = ['follow_id']  # 按照id排序
+        verbose_name = 'follow'  # 单数形式
+        verbose_name_plural = 'follows'  # 复数形式
+
+
+class collection(models.Model):  # Collection is a class that inherits from models.Model
+    collection_id = models.AutoField(primary_key=True)
+    user_id = models.IntegerField(unique=False)
+    achievement_id = models.IntegerField(unique=False)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        db_table = 'collection'  # 指明数据库表名
+        ordering = ['collection_id']  # 按照id排序
+        verbose_name = 'collection'  # 单数形式
+        verbose_name_plural = 'collections'  # 复数形式
+
+
+class chat(models.Model):  # Chat is a class that inherits from models.Model
+    chat_id = models.AutoField(primary_key=True)
+    send = models.IntegerField(unique=False)
+    receive = models.IntegerField(unique=False)
+    content = models.CharField(max_length=256, unique=False)
+    send_time = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        db_table = 'chat'  # 指明数据库表名
+        ordering = ['chat_id']  # 按照id排序
+        verbose_name = 'chat'  # 单数形式
+        verbose_name_plural = 'chats'  # 复数形式
+
+
+class report(models.Model):  # Report is a class that inherits from models.Model
+    report_id = models.AutoField(primary_key=True)
+    send = models.IntegerField(unique=False)
+    achievement_id = models.IntegerField(unique=False)
+    content = models.CharField(max_length=256, unique=False)
+    admin = models.IntegerField(unique=False)
+    time = models.DateTimeField(auto_now_add=True)
+    result = models.IntegerField(unique=False)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        db_table = 'report'  # 指明数据库表名
+        ordering = ['report_id']  # 按照id排序
+        verbose_name = 'report'  # 单数形式
+        verbose_name_plural = 'reports'  # 复数形式
+
+
+class comment(models.Model):  # Comment is a class that inherits from models.Model
+    comment_id = models.AutoField(primary_key=True)
+    user_id = models.IntegerField(unique=False)
+    achievement_id = models.IntegerField(unique=False)
+    content = models.CharField(max_length=256, unique=False)
+    time = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        db_table = 'comment'  # 指明数据库表名
+        ordering = ['comment_id']  # 按照id排序
+        verbose_name = 'comment'  # 单数形式
+        verbose_name_plural = 'comments'  # 复数形式
