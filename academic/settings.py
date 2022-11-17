@@ -11,10 +11,19 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
 from pathlib import Path
+import yaml
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# 从secrets.yml文件中读取数据库配置
+with open(BASE_DIR / 'secrets.yml') as f:
+    secrets = yaml.load(f, Loader=yaml.FullLoader)
+    databases_name = secrets['DATABASE']['name']
+    databases_user = secrets['DATABASE']['user']
+    databases_password = secrets['DATABASE']['password']
+    databases_host = secrets['DATABASE']['host']
+    databases_port = secrets['DATABASE']['port']
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
@@ -26,7 +35,6 @@ SECRET_KEY = 'django-insecure-_1#)1rvok_2je@2zm8#%np+erylj8=exf(38wm(k+5i27$ce--
 DEBUG = True
 
 ALLOWED_HOSTS = []
-
 
 # Application definition
 
@@ -71,17 +79,19 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'academic.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': databases_name,
+        'USER': databases_user,
+        'PASSWORD': databases_password,
+        'HOST': databases_host,
+        'PORT': databases_port,
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
@@ -101,7 +111,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/4.0/topics/i18n/
 
@@ -112,7 +121,6 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
