@@ -3,12 +3,12 @@ from django.db import models
 # Create your models here.
 
 
-class user(models.Model):  # User is a class that inherits from models.Model
+class User(models.Model):  # User is a class that inherits from models.Model
     user_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=256, unique=False)
     password = models.CharField(max_length=256, unique=False)
     email = models.CharField(max_length=256, unique=True)
-    address = models.CharField(max_length)
+    address = models.CharField(max_length=256, unique=False)
     identity = models.IntegerField(unique=False)
     intro = models.CharField(max_length=256, unique=False)
     penalty = models.BooleanField(default=False)
@@ -26,7 +26,7 @@ class user(models.Model):  # User is a class that inherits from models.Model
         verbose_name_plural = 'users'  # 复数形式
 
 
-class admin(models.Model):  # Admin is a class that inherits from models.Model
+class Admin(models.Model):  # Admin is a class that inherits from models.Model
     admin_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=256, unique=False)
     password = models.CharField(max_length=256, unique=False)
@@ -42,7 +42,7 @@ class admin(models.Model):  # Admin is a class that inherits from models.Model
         verbose_name_plural = 'admins'  # 复数形式
 
 
-class achievement(models.Model):  # Achievement is a class that inherits from models.Model
+class Achievement(models.Model):  # Achievement is a class that inherits from models.Model
     achievement_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=256, unique=True)
     author_id = models.CharField(max_length=256, unique=False)
@@ -62,7 +62,7 @@ class achievement(models.Model):  # Achievement is a class that inherits from mo
         verbose_name_plural = 'achievements'  # 复数形式
 
 
-class team(models.Model):  # Team is a class that inherits from models.Model
+class Team(models.Model):  # Team is a class that inherits from models.Model
     team_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=256, unique=True)
     intro = models.CharField(max_length=256, unique=False)
@@ -79,7 +79,7 @@ class team(models.Model):  # Team is a class that inherits from models.Model
         verbose_name_plural = 'teams'  # 复数形式
 
 
-class like(models.Model):  # Like is a class that inherits from models.Model
+class Like(models.Model):  # Like is a class that inherits from models.Model
     like_id = models.AutoField(primary_key=True)
     user_id = models.IntegerField(unique=False)
     achievement_id = models.IntegerField(unique=False)
@@ -94,7 +94,7 @@ class like(models.Model):  # Like is a class that inherits from models.Model
         verbose_name_plural = 'likes'  # 复数形式
 
 
-class follow(models.Model):  # Follow is a class that inherits from models.Model
+class Follow(models.Model):  # Follow is a class that inherits from models.Model
     follow_id = models.AutoField(primary_key=True)
     user1_id = models.IntegerField(unique=False)
     user2_id = models.IntegerField(unique=False)
@@ -109,7 +109,7 @@ class follow(models.Model):  # Follow is a class that inherits from models.Model
         verbose_name_plural = 'follows'  # 复数形式
 
 
-class collection(models.Model):  # Collection is a class that inherits from models.Model
+class Collection(models.Model):  # Collection is a class that inherits from models.Model
     collection_id = models.AutoField(primary_key=True)
     user_id = models.IntegerField(unique=False)
     achievement_id = models.IntegerField(unique=False)
@@ -124,7 +124,7 @@ class collection(models.Model):  # Collection is a class that inherits from mode
         verbose_name_plural = 'collections'  # 复数形式
 
 
-class chat(models.Model):  # Chat is a class that inherits from models.Model
+class Chat(models.Model):  # Chat is a class that inherits from models.Model
     chat_id = models.AutoField(primary_key=True)
     send = models.IntegerField(unique=False)
     receive = models.IntegerField(unique=False)
@@ -141,7 +141,7 @@ class chat(models.Model):  # Chat is a class that inherits from models.Model
         verbose_name_plural = 'chats'  # 复数形式
 
 
-class report(models.Model):  # Report is a class that inherits from models.Model
+class Report(models.Model):  # Report is a class that inherits from models.Model
     report_id = models.AutoField(primary_key=True)
     send = models.IntegerField(unique=False)
     achievement_id = models.IntegerField(unique=False)
@@ -160,7 +160,7 @@ class report(models.Model):  # Report is a class that inherits from models.Model
         verbose_name_plural = 'reports'  # 复数形式
 
 
-class comment(models.Model):  # Comment is a class that inherits from models.Model
+class Comment(models.Model):  # Comment is a class that inherits from models.Model
     comment_id = models.AutoField(primary_key=True)
     user_id = models.IntegerField(unique=False)
     achievement_id = models.IntegerField(unique=False)
@@ -175,3 +175,19 @@ class comment(models.Model):  # Comment is a class that inherits from models.Mod
         ordering = ['comment_id']  # 按照id排序
         verbose_name = 'comment'  # 单数形式
         verbose_name_plural = 'comments'  # 复数形式
+
+
+class VerificationCode(models.Model):  # VerificationCode is a class that inherits from models.Model
+    code_id = models.AutoField(primary_key=True)
+    email = models.CharField(max_length=256, unique=False)
+    code = models.CharField(max_length=256, unique=False)
+    time = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        db_table = 'verification_code'  # 指明数据库表名
+        ordering = ['code_id']  # 按照id排序
+        verbose_name = 'verification_code'  # 单数形式
+        verbose_name_plural = 'verification_codes'  # 复数形式

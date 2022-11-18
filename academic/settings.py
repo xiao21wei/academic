@@ -16,8 +16,8 @@ import yaml
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# 从secrets.yml文件中读取数据库配置
-with open(BASE_DIR / 'secrets.yml') as f:
+# 从secrets.yaml文件中读取数据库配置
+with open(BASE_DIR / 'secrets.yaml', 'r') as f:
     secrets = yaml.load(f, Loader=yaml.FullLoader)
     databases_name = secrets['DATABASE']['name']
     databases_user = secrets['DATABASE']['user']
@@ -52,7 +52,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
+    # 'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -63,8 +63,7 @@ ROOT_URLCONF = 'academic.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates']
-        ,
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
