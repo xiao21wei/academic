@@ -12,5 +12,5 @@ urlpatterns = [
     path('get_achievements_by_area', get_achievements_by_area, name='get_achievements_by_area'),
     path('get_achievements_by_name', get_achievements_by_name, name='get_achievements_by_name'),
     path('get_achievements_by_author', get_achievements_by_author, name='get_achievements_by_author'),
-    path('get_achievements_by_time', get_achievements_by_year, name='get_achievements_by_year')
+    path('get_achievements_by_time', get_achievements_by_time, name='get_achievements_by_time')
 ]
