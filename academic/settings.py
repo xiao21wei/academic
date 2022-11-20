@@ -24,6 +24,11 @@ with open(BASE_DIR / 'secrets.yaml', 'r') as f:
     databases_password = secrets['DATABASE']['password']
     databases_host = secrets['DATABASE']['host']
     databases_port = secrets['DATABASE']['port']
+    mail_host = secrets['MAIL']['host']
+    mail_port = secrets['MAIL']['port']
+    mail_user = secrets['MAIL']['user']
+    mail_password = secrets['MAIL']['password']
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
@@ -130,3 +135,11 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# 发送邮箱验证码
+EMAIL_HOST = mail_host
+EMAIL_PORT = mail_port
+EMAIL_HOST_USER = mail_user
+EMAIL_HOST_PASSWORD = mail_password
+EMAIL_USE_TLS = False
+EMAIL_FROM = 'academic <{}>'.format(mail_user)

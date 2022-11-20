@@ -1,11 +1,11 @@
-from django.shortcuts import render
 from my_app.models import *
 from django.http import JsonResponse
+from tools.send_code import send_sms_code
 
 
 # Path: my_app\urls.py
 # Create your views here.
-def publish_achievement(request):
+def publish_achievement(request):  # 发布学术成果
     if request.method == 'POST':
         name = request.POST.get('name')
         # 获取author_id列表信息，并用'_'拼接成字符串
@@ -24,9 +24,9 @@ def publish_achievement(request):
         return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
 
 
-def get_achievement(request):
+def get_achievement(request):  # 获取学术成果详情
     if request.method == 'POST':
-        achievement_id = request.GET.get('achievement_id')
+        achievement_id = request.POST.get('achievement_id')
         achievement = Achievement.objects.get(achievement_id=achievement_id)
         if achievement:
             return JsonResponse({'error': '0', 'msg': '获取学术成果成功', 'data': {
@@ -47,7 +47,7 @@ def get_achievement(request):
         return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
 
 
-def get_achievements(request):
+def get_achievements(request):  # 获取学术成果列表
     if request.method == 'POST':
         achievements = Achievement.objects.all()
         if achievements:
@@ -71,7 +71,7 @@ def get_achievements(request):
         return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
 
 
-def update_achievement(request):
+def update_achievement(request):  # 更新学术成果
     if request.method == 'POST':
         achievement_id = request.POST.get('achievement_id')
         user_id = request.POST.get('user_id')
@@ -104,7 +104,7 @@ def update_achievement(request):
         return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
 
 
-def delete_achievement(request):
+def delete_achievement(request):  # 删除学术成果
     if request.method == 'POST':
         achievement_id = request.POST.get('achievement_id')
         user_id = request.POST.get('user_id')
@@ -123,9 +123,9 @@ def delete_achievement(request):
         return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
 
 
-def get_achievements_by_area(request):
+def get_achievements_by_area(request):  # 根据领域获取学术成果
     if request.method == 'POST':
-        area = request.GET.get('area')
+        area = request.POST.get('area')
         achievements = Achievement.objects.filter(area__contains='_'+area+'_')
         if achievements:
             return JsonResponse({'error': '0', 'msg': '获取学术成果成功', 'data': [
@@ -148,9 +148,9 @@ def get_achievements_by_area(request):
         return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
 
 
-def get_achievements_by_type(request):
+def get_achievements_by_type(request):  # 通过类型获取学术成果
     if request.method == 'POST':
-        type = request.GET.get('type')
+        type = request.POST.get('type')
         achievements = Achievement.objects.filter(type=type)
         if achievements:
             return JsonResponse({'error': '0', 'msg': '获取学术成果成功', 'data': [
@@ -173,9 +173,9 @@ def get_achievements_by_type(request):
         return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
 
 
-def get_achievements_by_name(request):
+def get_achievements_by_name(request):  # 根据学术成果名字获取学术成果
     if request.method == 'POST':
-        name = request.GET.get('name')
+        name = request.POST.get('name')
         achievements = Achievement.objects.filter(name__contains=name)
         if achievements:
             return JsonResponse({'error': '0', 'msg': '获取学术成果成功', 'data': [
@@ -198,9 +198,9 @@ def get_achievements_by_name(request):
         return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
 
 
-def get_achievements_by_author(request):
+def get_achievements_by_author(request):  # 通过作者id获取学术成果
     if request.method == 'POST':
-        author = request.GET.get('author')
+        author = request.POST.get('author')
         achievements = Achievement.objects.filter(author_id__contains='_'+author+'_')
         if achievements:
             return JsonResponse({'error': '0', 'msg': '获取学术成果成功', 'data': [
@@ -223,11 +223,10 @@ def get_achievements_by_author(request):
         return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
 
 
-# 根据时间范围查找学术成果
-def get_achievements_by_time(request):
+def get_achievements_by_time(request):  # 通过时间获取学术成果
     if request.method == 'POST':
-        start_time = request.GET.get('start_time')
-        end_time = request.GET.get('end_time')
+        start_time = request.POST.get('start_time')
+        end_time = request.POST.get('end_time')
         achievements = Achievement.objects.filter(create_time__range=(start_time, end_time))
         if achievements:
             return JsonResponse({'error': '0', 'msg': '获取学术成果成功', 'data': [
@@ -250,4 +249,14 @@ def get_achievements_by_time(request):
         return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
 
 
-
+def send_verification_code(request):  # 发送验证码
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        send_type = request.POST.get('send_type')
+        flag = send_sms_code(email, send_type)
+        if flag:
+            return JsonResponse({'error': '0', 'msg': '发送验证码成功'})
+        else:
+            return JsonResponse({'error': '1002', 'msg': '发送验证码失败'})
+    else:
+        return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
