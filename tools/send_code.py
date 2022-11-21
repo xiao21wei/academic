@@ -25,7 +25,8 @@ def send_sms_code(to_mail, send_type):
     if send_type == 'register':
         email_title = "用户注册验证"
 
-        context = {'code1': code[0],
+        context = {'send_type': email_title,
+                   'code1': code[0],
                    'code2': code[1],
                    'code3': code[2],
                    'code4': code[3],
@@ -48,7 +49,8 @@ def send_sms_code(to_mail, send_type):
     elif send_type == 'forget':
         email_title = "用户密码重置"
 
-        context = {'code1': code[0],
+        context = {'send_type': email_title,
+                   'code1': code[0],
                    'code2': code[1],
                    'code3': code[2],
                    'code4': code[3],
@@ -71,7 +73,8 @@ def send_sms_code(to_mail, send_type):
     elif send_type == 'update_email':
         email_title = "用户邮箱修改"
 
-        context = {'code1': code[0],
+        context = {'send_type': email_title,
+                   'code1': code[0],
                    'code2': code[1],
                    'code3': code[2],
                    'code4': code[3],
@@ -94,7 +97,8 @@ def send_sms_code(to_mail, send_type):
     elif send_type == 'update_password':
         email_title = "用户密码修改"
 
-        context = {'code1': code[0],
+        context = {'send_type': email_title,
+                   'code1': code[0],
                    'code2': code[1],
                    'code3': code[2],
                    'code4': code[3],
