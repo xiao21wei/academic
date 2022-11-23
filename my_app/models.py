@@ -84,6 +84,10 @@ class Like(models.Model):  # Like is a class that inherits from models.Model
     user_id = models.IntegerField(unique=False)
     achievement_id = models.IntegerField(unique=False)
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(args, kwargs)
+        self.name = '点赞'
+
     def __str__(self):
         return self.name
 
@@ -99,6 +103,10 @@ class Follow(models.Model):  # Follow is a class that inherits from models.Model
     user1_id = models.IntegerField(unique=False)
     user2_id = models.IntegerField(unique=False)
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(args, kwargs)
+        self.name = '关注'
+
     def __str__(self):
         return self.name
 
@@ -113,6 +121,10 @@ class Collection(models.Model):  # Collection is a class that inherits from mode
     collection_id = models.AutoField(primary_key=True)
     user_id = models.IntegerField(unique=False)
     achievement_id = models.IntegerField(unique=False)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(args, kwargs)
+        self.name = '收藏'
 
     def __str__(self):
         return self.name
@@ -130,6 +142,10 @@ class Chat(models.Model):  # Chat is a class that inherits from models.Model
     receive = models.IntegerField(unique=False)
     content = models.CharField(max_length=256, unique=False)
     send_time = models.DateTimeField(auto_now_add=True)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(args, kwargs)
+        self.name = '私聊'
 
     def __str__(self):
         return self.name
@@ -150,6 +166,10 @@ class Report(models.Model):  # Report is a class that inherits from models.Model
     time = models.DateTimeField(auto_now_add=True)
     result = models.IntegerField(unique=False)
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(args, kwargs)
+        self.name = '举报'
+
     def __str__(self):
         return self.name
 
@@ -167,6 +187,10 @@ class Comment(models.Model):  # Comment is a class that inherits from models.Mod
     content = models.CharField(max_length=256, unique=False)
     time = models.DateTimeField(auto_now_add=True)
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(args, kwargs)
+        self.name = '评论'
+
     def __str__(self):
         return self.name
 
@@ -182,6 +206,10 @@ class VerificationCode(models.Model):  # VerificationCode is a class that inheri
     email = models.CharField(max_length=256, unique=False)
     code = models.CharField(max_length=256, unique=False)
     time = models.DateTimeField(auto_now_add=True)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(args, kwargs)
+        self.name = '邮箱验证'
 
     def __str__(self):
         return self.name
