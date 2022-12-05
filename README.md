@@ -76,7 +76,35 @@ python manage.py runserver # 运行
 - [x] get_achievement_by_name 获取成果列表（按名称）
 - [x] get_achievement_by_author 获取成果列表（按作者）
 - [x] get_achievement_by_time 获取成果列表（按时间）
+- [x] send_verification_code 发送验证码
+- [x] report_achievement 举报学术成果
+- [x] check_report 审核举报
+- [x] get_report 获取举报信息
+- [x] get_report_list 获取举报列表
+- [x] get_unchecked_report_list 获取未审核举报列表
+- [x] get_checked_report_list 获取已审核举报列表
+- [x] get_report_list_by_achievement 获取举报列表（按成果）
+- [x] get_report_list_by_user 获取举报列表（按用户）
+- [x] get_report_list_by_admin 获取举报列表（按管理员）
+- [x] like_achievement 点赞学术成果
+- [x] cancel_like_achievement 取消点赞学术成果
+- [x] get_like_list_by_achievement 获取点赞列表（按成果）
+- [x] get_like_list_by_user 获取点赞列表（按用户）
+- [x] get_like_count_by_achievement 获取点赞数（按成果）
+- [x] comment_achievement 评论学术成果
+- [x] delete_comment 删除评论
+- [x] get_comment_list_by_achievement 获取评论列表（按成果）
+- [x] get_comment_list_by_user 获取评论列表（按用户）
+- [x] get_comment_count_by_achievement 获取评论数（按成果）
+- [x] get_comment_count_by_user 获取评论数（按用户）
+- [x] collect_achievement 收藏学术成果
+- [x] cancel_collect_achievement 取消收藏学术成果
+- [x] get_collect_list_by_achievement 获取收藏列表（按成果）
+- [x] get_collect_list_by_user 获取收藏列表（按用户）
+- [x] get_collect_count_by_achievement 获取收藏数（按成果）
+- [x] get_collect_count_by_user 获取收藏数（按用户）
 
 ### 项目功能（待完成）
+
 
 
