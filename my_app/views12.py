@@ -110,7 +110,15 @@ def login(request):
     return JsonResponse({'error': '0', 'msg': '登录成功'})
 
 
+# 登出
+@csrf_exempt
+def logout(request):
+    request.session.flush()
+    return JsonResponse({'error': '0', 'msg': '登出成功'})
+
+
 # 获取个人信息
+@csrf_exempt
 def get_self_information(request):
     if request.method != 'GET':
         return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
@@ -122,6 +130,7 @@ def get_self_information(request):
 
 
 # 获取他人信息
+@csrf_exempt
 def get_intro_by_username(request):
     if request.method != 'GET':
         return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
@@ -132,4 +141,26 @@ def get_intro_by_username(request):
     return JsonResponse({'error': '0', 'msg': user})
 
 
-# 申请成为学者
+# 设置成为学者
+@csrf_exempt
+def set_scholar(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
+    username = request.GET.get('username')
+    user = User.objects.get(username=username)
+    user.identity = 1
+    user.save()
+    return JsonResponse({'error': '0', 'msg': '设置成功'})
+
+
+# 设置个人简介
+@csrf_exempt
+def set_intro(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
+    intro = request.GET.get('intro')
+    username = request.session.get('user')
+    user = User.objects.get(username=username)
+    user.intro = intro
+    user.save()
+    return JsonResponse({'error': '0', 'msg': '设置成功'})
