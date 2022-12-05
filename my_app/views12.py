@@ -3,7 +3,7 @@ import datetime
 from django.views.decorators.csrf import csrf_exempt
 from my_app.models import *
 from django.http import JsonResponse
-from tools.send_code import send_sms_code
+from academic.tools import send_sms_code
 import re
 
 regex = re.compile(r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+')

@@ -14,10 +14,27 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
+from django.conf.urls.static import static
+# from rest_framework import permissions
+# from drf_yasg2.views import get_schema_view
+# from drf_yasg2 import openapi
+
+# schema_view = get_schema_view(
+#     openapi.Info(
+#         title="Academic API",
+#         default_version='v1',
+#         description="Welcome to the world of Tweet",
+#         terms_of_service="https://www.tweet.org",
+#         contact=openapi.Contact(email="demo@tweet.org"),
+#         license=openapi.License(name="Awesome IP"),
+#     ),
+#     public=True,
+#     permission_classes=(permissions.AllowAny,),
+# )
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('my_app/', include('my_app.urls')),
-    path('my_app12/', include('my_app.url12')),
+    path('my_app12/', include('my_app.urls12')),
 ]

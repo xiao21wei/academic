@@ -13,7 +13,7 @@ urlpatterns = [
     path('get_achievements_by_name', get_achievements_by_name, name='get_achievements_by_name'),
     path('get_achievements_by_author', get_achievements_by_author, name='get_achievements_by_author'),
     path('get_achievements_by_time', get_achievements_by_time, name='get_achievements_by_time'),
-    path('send_verification_code', send_verification_code, name='send_verification_code'),
+    # path('send_verification_code', send_verification_code, name='send_verification_code'),
     path('report_achievement', report_achievement, name='report_achievement'),
     path('check_report', check_report, name='check_report'),
     path('get_report', get_report, name='get_report'),
@@ -40,4 +40,5 @@ urlpatterns = [
     path('get_collect_count_by_user', get_collect_count_by_user, name='get_collect_count_by_user'),
     path('get_collect_list_by_achievement', get_collect_list_by_achievement, name='get_collect_list_by_achievement'),
     path('get_collect_list_by_user', get_collect_list_by_user, name='get_collect_list_by_user'),
+    path('index', index, name='index'),
 ]

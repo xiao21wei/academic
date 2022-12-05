@@ -58,3 +58,8 @@ def send_sms_code(to_mail, send_type):
         return True
     else:
         return False
+
+
+def check_session(request):
+    id = request.session.get('user', 0)
+    return id
