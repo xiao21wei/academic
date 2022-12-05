@@ -1,3 +1,5 @@
+from django.views.decorators.csrf import csrf_exempt
+
 from my_app.models import *
 from django.http import JsonResponse
 from tools.send_code import send_sms_code
