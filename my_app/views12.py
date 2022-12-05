@@ -121,3 +121,15 @@ def get_self_information(request):
     return JsonResponse({'error': '0', 'msg': user})
 
 
+# 获取他人信息
+def get_intro_by_username(request):
+    if request.method != 'GET':
+        return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
+    username = request.GET.get('username')
+    if not User.objects.exists(username=username):
+        return JsonResponse({'error': '1002', 'msg': '用户不存在'})
+    user = User.objects.get(username=username)
+    return JsonResponse({'error': '0', 'msg': user})
+
+
+# 申请成为学者

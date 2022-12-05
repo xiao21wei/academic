@@ -12,7 +12,7 @@ class User(models.Model):  # User is a class that inherits from models.Model
     identity = models.IntegerField(unique=False)
     intro = models.CharField(max_length=256, unique=False)
     penalty = models.BooleanField(default=False)
-    birthday = models.DateField()
+    birthday = models.DateField(auto_now_add=True)
     team_id = models.IntegerField(unique=False)
     real_name = models.CharField(max_length=256, unique=False)
 
