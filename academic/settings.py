@@ -31,6 +31,9 @@ with open(BASE_DIR / 'secrets.yaml', 'r') as f:
     mail_port = secrets['MAIL']['port']
     mail_user = secrets['MAIL']['user']
     mail_password = secrets['MAIL']['password']
+    redis_host = secrets['REDIS']['host']
+    redis_port = secrets['REDIS']['port']
+    redis_password = secrets['REDIS']['password']
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
@@ -41,7 +44,7 @@ SECRET_KEY = 'django-insecure-_1#)1rvok_2je@2zm8#%np+erylj8=exf(38wm(k+5i27$ce--
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 
@@ -133,12 +136,16 @@ WSGI_APPLICATION = 'academic.wsgi.application'
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/1",
+        "LOCATION": "redis://{}:{}/1".format(redis_host, redis_port),
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            'PASSWORD': redis_password,
         }
     }
 }
+
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+SESSION_CACHE_ALIAS = "default"
 
 # Redis settings
 REDIS_TIMEOUT=7*24*60*60
@@ -200,9 +207,9 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'img').replace('\\', '/')
 if platform.system() == "Windows":
     IMG_URL = "127.0.0.1:8000/"
 else:
-    IMG_URL = "123.57.194.168:8000/"
+    IMG_URL = redis_host+":8000/"
 
-Redis = redis.Redis(host='127.0.0.1', port=6379, decode_responses=True)
+Redis = redis.Redis(host=redis_host, port=redis_port, decode_responses=True)
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
@@ -211,7 +218,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Email settings
 EMAIL_HOST = mail_host						# 服务器
-EMAIL_USE_SSL = True							# 服务器端设置
+EMAIL_USE_SSL = False							# 服务器端设置
 EMAIL_PORT = mail_port								# 本地为25,服务器为465
 EMAIL_HOST_USER = mail_user			# 账号
 EMAIL_HOST_PASSWORD = mail_password 	# 密码 (注意：这里的密码指的是授权码)

@@ -49,12 +49,8 @@ def send_sms_code(to_mail, send_type):
     send_status = msg.send()
     if send_status:
         if VerificationCode.objects.filter(email=to_mail).exists():
-            verificationcode = VerificationCode.objects.get(email=to_mail)
-            verificationcode.code = code
-            verificationcode.save()
-        else:
-            verificationcode = VerificationCode(code=code, email=to_mail)
-            verificationcode.save()
+            VerificationCode.objects.filter(email=to_mail).delete()
+        VerificationCode.objects.create(email=to_mail, code=code)
         return True
     else:
         return False

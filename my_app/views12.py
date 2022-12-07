@@ -5,6 +5,7 @@ from my_app.models import *
 from django.http import JsonResponse
 from academic.tools import send_sms_code
 import re
+from academic.settings import Redis
 
 regex = re.compile(r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+')
 
@@ -24,7 +25,7 @@ def send_register_email(request):
     email = request.POST.get('email')
     if not check_format_mail(email):
         return JsonResponse({'error': '1002', 'msg': '邮箱格式错误'})
-    if User.objects.exists(email=email):
+    if User.objects.filter(email=email).exists():
         return JsonResponse({'error': '1004', 'msg': '邮箱已被注册'})
     if send_sms_code(email, 'register'):
         return JsonResponse({'error': '0', 'msg': '邮件发送成功'})
@@ -34,7 +35,7 @@ def send_register_email(request):
 
 # 判断验证码
 def check_code(toemail, code):
-    if VerificationCode.objects.exists(toemail):
+    if VerificationCode.objects.filter(email=toemail).exists():
         verificationcode = VerificationCode.objects.get(code=code, email=toemail)
         if (datetime.datetime.now() - verificationcode.time).seconds > 300:
             return 'wrong time'
@@ -55,7 +56,7 @@ def register(request):
     username = request.POST.get('username')
     if len(username) > 10 or len(username) < 2:
         return JsonResponse({'error': '1002', 'msg': '用户名在2-10个字符之间'})
-    if User.objects.exists(name=username):
+    if User.objects.filter(username=username).exists():
         return JsonResponse({'error': '1003', 'msg': '用户名已存在'})
 
     password = request.POST.get('password')
@@ -70,7 +71,7 @@ def register(request):
     email = request.POST.get('email')
     if not check_format_mail(email):
         return JsonResponse({'error': '1007', 'msg': '邮箱格式错误'})
-    if User.objects.exists(email=email):
+    if User.objects.filter(email=email).exists():
         return JsonResponse({'error': '1011', 'msg': '邮箱已被注册'})
     code = request.POST.get('code')
     res = check_code(email, code)
@@ -78,7 +79,7 @@ def register(request):
         return JsonResponse({'error': '1008', 'msg': '验证码失效'})
     elif res == 'AC':
         realname = request.POST.get('realname')
-        user = User(name=username, password=password, email=email, real_name=realname)
+        user = User(username=username, password=password, email=email, real_name=realname)
         user.save()
         return JsonResponse({'error': '0', 'msg': '注册成功'})
     elif res == 'wrong':
@@ -99,10 +100,10 @@ def login(request):
     username = request.POST.get('username')
     password = request.POST.get('password')
 
-    if not User.objects.exists(username=username):
+    if not User.objects.filter(username=username).exists():
         return JsonResponse({'error': '1003', 'msg': '用户名不存在'})
 
-    if not User.objects.exists(username=username, password=password):
+    if not User.objects.filter(username=username, password=password).exists():
         return JsonResponse({'error': '1004', 'msg': '密码错误'})
 
     request.session['user'] = username
@@ -126,7 +127,7 @@ def get_self_information(request):
         return JsonResponse({'error': '1002', 'msg': '请先登录'})
     username = request.session.get('user')
     user = User.objects.get(username=username)
-    return JsonResponse({'error': '0', 'msg': user})
+    return JsonResponse({'error': '0', 'msg': '获取成功', 'data': user.to_json()})
 
 
 # 获取他人信息
@@ -135,7 +136,7 @@ def get_intro_by_username(request):
     if request.method != 'GET':
         return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
     username = request.GET.get('username')
-    if not User.objects.exists(username=username):
+    if not User.objects.filter(username=username).exists():
         return JsonResponse({'error': '1002', 'msg': '用户不存在'})
     user = User.objects.get(username=username)
     return JsonResponse({'error': '0', 'msg': user})

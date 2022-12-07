@@ -5,16 +5,16 @@ from django.db import models
 
 class User(models.Model):  # User is a class that inherits from models.Model
     user_id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=256, unique=False)
+    username = models.CharField(max_length=256, unique=False)
     password = models.CharField(max_length=256, unique=False)
     email = models.CharField(max_length=256, unique=True)
-    address = models.CharField(max_length=256, unique=False)
-    identity = models.IntegerField(unique=False)
-    intro = models.CharField(max_length=256, unique=False)
+    address = models.CharField(max_length=256, unique=False, default='未填写')
+    identity = models.IntegerField(unique=False, default=0)
+    intro = models.CharField(max_length=256, unique=False, default='未填写')
     penalty = models.BooleanField(default=False)
-    birthday = models.DateField(auto_now_add=True)
-    team_id = models.IntegerField(unique=False)
-    real_name = models.CharField(max_length=256, unique=False)
+    birthday = models.DateField(auto_now_add=True, null=True)
+    team_id = models.IntegerField(unique=False, null=True)
+    real_name = models.CharField(max_length=256, unique=False, default='未填写')
 
     def __str__(self):
         return self.name
@@ -24,6 +24,21 @@ class User(models.Model):  # User is a class that inherits from models.Model
         ordering = ['user_id']  # 按照id排序
         verbose_name = 'user'  # 单数形式
         verbose_name_plural = 'users'  # 复数形式
+
+    def to_json(self):
+        return {
+            'user_id': self.user_id,
+            'username': self.username,
+            'password': self.password,
+            'email': self.email,
+            'address': self.address,
+            'identity': self.identity,
+            'intro': self.intro,
+            'penalty': self.penalty,
+            'birthday': self.birthday,
+            'team_id': self.team_id,
+            'real_name': self.real_name,
+        }
 
 
 class Admin(models.Model):  # Admin is a class that inherits from models.Model
@@ -46,11 +61,11 @@ class Achievement(models.Model):  # Achievement is a class that inherits from mo
     achievement_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=256, unique=True)
     author_id = models.CharField(max_length=256, unique=False)
-    intro = models.CharField(max_length=256, unique=False)
-    url = models.CharField(max_length=256, unique=False)
+    intro = models.CharField(max_length=256, unique=False, default='未填写')
+    url = models.CharField(max_length=256, unique=False, default='未填写')
     create_time = models.DateTimeField(auto_now_add=True)
-    type = models.IntegerField(unique=False)
-    area = models.CharField(max_length=256, unique=False)
+    type = models.IntegerField(unique=False, default=0)
+    area = models.CharField(max_length=256, unique=False, default='未填写')
 
     def __str__(self):
         return self.name
@@ -65,7 +80,7 @@ class Achievement(models.Model):  # Achievement is a class that inherits from mo
 class Team(models.Model):  # Team is a class that inherits from models.Model
     team_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=256, unique=True)
-    intro = models.CharField(max_length=256, unique=False)
+    intro = models.CharField(max_length=256, unique=False, default='未填写')
     create_time = models.DateTimeField(auto_now_add=True)
     user_list = models.CharField(max_length=256, unique=False)
 
@@ -84,10 +99,6 @@ class Like(models.Model):  # Like is a class that inherits from models.Model
     user_id = models.IntegerField(unique=False)
     achievement_id = models.IntegerField(unique=False)
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(args, kwargs)
-        self.name = '点赞'
-
     def __str__(self):
         return self.name
 
@@ -103,10 +114,6 @@ class Follow(models.Model):  # Follow is a class that inherits from models.Model
     user1_id = models.IntegerField(unique=False)
     user2_id = models.IntegerField(unique=False)
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(args, kwargs)
-        self.name = '关注'
-
     def __str__(self):
         return self.name
 
@@ -121,10 +128,6 @@ class Collection(models.Model):  # Collection is a class that inherits from mode
     collection_id = models.AutoField(primary_key=True)
     user_id = models.IntegerField(unique=False)
     achievement_id = models.IntegerField(unique=False)
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(args, kwargs)
-        self.name = '收藏'
 
     def __str__(self):
         return self.name
@@ -142,10 +145,6 @@ class Chat(models.Model):  # Chat is a class that inherits from models.Model
     receive = models.IntegerField(unique=False)
     content = models.CharField(max_length=256, unique=False)
     send_time = models.DateTimeField(auto_now_add=True)
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(args, kwargs)
-        self.name = '私聊'
 
     def __str__(self):
         return self.name
@@ -166,10 +165,6 @@ class Report(models.Model):  # Report is a class that inherits from models.Model
     time = models.DateTimeField(auto_now_add=True)
     result = models.IntegerField(unique=False)
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(args, kwargs)
-        self.name = '举报'
-
     def __str__(self):
         return self.name
 
@@ -187,10 +182,6 @@ class Comment(models.Model):  # Comment is a class that inherits from models.Mod
     content = models.CharField(max_length=256, unique=False)
     time = models.DateTimeField(auto_now_add=True)
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(args, kwargs)
-        self.name = '评论'
-
     def __str__(self):
         return self.name
 
@@ -206,10 +197,6 @@ class VerificationCode(models.Model):  # VerificationCode is a class that inheri
     email = models.CharField(max_length=256, unique=False)
     code = models.CharField(max_length=256, unique=False)
     time = models.DateTimeField(auto_now_add=True)
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(args, kwargs)
-        self.name = '邮箱验证'
 
     def __str__(self):
         return self.name
