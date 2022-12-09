@@ -60,17 +60,14 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'django.middleware.cache.UpdateCacheMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
-    # 'django.middleware.csrf.CsrfViewMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-
-    'django.middleware.cache.FetchFromCacheMiddleware',
 ]
 
 LOCAL = False
@@ -78,7 +75,7 @@ if platform.system() == 'Windows':
     LOCAL = True
 
 if not LOCAL:
-    SESSION_COOKIE_SECURE = True
+    # SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_SAMESITE = 'None'
 
 CORS_ALLOW_CREDENTIALS = True  # 允许携带cookie
@@ -144,9 +141,6 @@ CACHES = {
     }
 }
 
-SESSION_ENGINE = "django.contrib.sessions.backends.cache"
-SESSION_CACHE_ALIAS = "default"
-
 # Redis settings
 REDIS_TIMEOUT=7*24*60*60
 CUBES_REDIS_TIMEOUT=60*60
@@ -207,7 +201,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'img').replace('\\', '/')
 if platform.system() == "Windows":
     IMG_URL = "127.0.0.1:8000/"
 else:
-    IMG_URL = redis_host+":8000/"
+    IMG_URL = "123.249.109.103:8000/"
 
 Redis = redis.Redis(host=redis_host, port=redis_port, decode_responses=True)
 

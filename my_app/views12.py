@@ -36,8 +36,11 @@ def send_register_email(request):
 # 判断验证码
 def check_code(toemail, code):
     if VerificationCode.objects.filter(email=toemail).exists():
-        verificationcode = VerificationCode.objects.get(code=code, email=toemail)
-        if (datetime.datetime.now() - verificationcode.time).seconds > 300:
+        verificationcode = VerificationCode.objects.filter(code=code, email=toemail)
+        if not verificationcode.exists():
+            return 'wrong'
+        verifycode = verificationcode.first()
+        if (datetime.datetime.now() - verifycode.time).seconds > 300:
             return 'wrong time'
         if code == verificationcode.code:
             return 'AC'
@@ -121,7 +124,7 @@ def logout(request):
 # 获取个人信息
 @csrf_exempt
 def get_self_information(request):
-    if request.method != 'GET':
+    if request.method != 'POST':
         return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
     if not request.session.get('is_login', False):
         return JsonResponse({'error': '1002', 'msg': '请先登录'})
@@ -133,13 +136,14 @@ def get_self_information(request):
 # 获取他人信息
 @csrf_exempt
 def get_intro_by_username(request):
-    if request.method != 'GET':
+    if request.method != 'POST':
         return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
-    username = request.GET.get('username')
+    username = request.POST.get('username')
+    # 如果不存在该用户，返回错误
     if not User.objects.filter(username=username).exists():
         return JsonResponse({'error': '1002', 'msg': '用户不存在'})
     user = User.objects.get(username=username)
-    return JsonResponse({'error': '0', 'msg': user})
+    return JsonResponse({'error': '0', 'msg': '获取成功', 'data': user.to_json()})
 
 
 # 设置成为学者

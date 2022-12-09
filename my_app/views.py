@@ -76,12 +76,12 @@ def get_achievement(request):
 @csrf_exempt  # 跨域设置
 def get_achievements(request):
     if request.method == 'POST':
-        # id = check_session(request)
-        # if id == 0:
-        #     return JsonResponse({'error': '-1', 'msg': '请先登录'})
+        id = check_session(request)
+        if id == 0:
+            return JsonResponse({'error': '-1', 'msg': '请先登录'})
         achievements = Achievement.objects.all()
         if achievements:
-            return JsonResponse({'error': '0', 'msg': '获取学术成果成功', 'data': [
+            return JsonResponse({'error': '0', 'msg': '获取学术成果成功', 'data': [  # 结果按照create_time降序排列
                 {
                     'achievement_id': achievement.achievement_id,
                     'name': achievement.name,
@@ -93,7 +93,7 @@ def get_achievements(request):
                     # 用'_'分割字符串，去除空，返回列表
                     'area': list(filter(None, achievement.area.split('_'))),
                     'create_time': achievement.create_time.strftime('%Y-%m-%d %H:%M:%S'),
-                } for achievement in achievements
+                } for achievement in achievements.order_by('-create_time')
             ]})
         else:
             return JsonResponse({'error': '1002', 'msg': '学术成果不存在'})
@@ -109,12 +109,11 @@ def update_achievement(request):
         if id == 0:
             return JsonResponse({'error': '-1', 'msg': '请先登录'})
         achievement_id = request.POST.get('achievement_id')
-        user_id = request.POST.get('user_id')
         achievement = Achievement.objects.get(achievement_id=achievement_id)
         if achievement:
             # 获取author_id的第一个值，即为作者id
             author_id = achievement.author_id.split('_')[0]
-            if author_id == user_id:
+            if author_id == id:
                 name = request.POST.get('name')
                 intro = request.POST.get('intro')
                 url = request.POST.get('url')
@@ -185,7 +184,7 @@ def get_achievements_by_area(request):
                     # 用'_'分割字符串，去除空，返回列表
                     'area': list(filter(None, achievement.area.split('_'))),
                     'create_time': achievement.create_time.strftime('%Y-%m-%d %H:%M:%S'),
-                } for achievement in achievements
+                } for achievement in achievements.order_by('-create_time')
             ]})
         else:
             return JsonResponse({'error': '1002', 'msg': '学术成果不存在'})
@@ -215,7 +214,7 @@ def get_achievements_by_type(request):
                     # 用'_'分割字符串，去除空，返回列表
                     'area': list(filter(None, achievement.area.split('_'))),
                     'create_time': achievement.create_time.strftime('%Y-%m-%d %H:%M:%S'),
-                } for achievement in achievements
+                } for achievement in achievements.order_by('-create_time')
             ]})
         else:
             return JsonResponse({'error': '1002', 'msg': '学术成果不存在'})
@@ -245,7 +244,7 @@ def get_achievements_by_name(request):
                     # 用'_'分割字符串，去除空，返回列表
                     'area': list(filter(None, achievement.area.split('_'))),
                     'create_time': achievement.create_time.strftime('%Y-%m-%d %H:%M:%S'),
-                } for achievement in achievements
+                } for achievement in achievements.order_by('-create_time')
             ]})
         else:
             return JsonResponse({'error': '1002', 'msg': '学术成果不存在'})
@@ -275,7 +274,7 @@ def get_achievements_by_author(request):
                     # 用'_'分割字符串，去除空，返回列表
                     'area': list(filter(None, achievement.area.split('_'))),
                     'create_time': achievement.create_time.strftime('%Y-%m-%d %H:%M:%S'),
-                } for achievement in achievements
+                } for achievement in achievements.order_by('-create_time')
             ]})
         else:
             return JsonResponse({'error': '1002', 'msg': '学术成果不存在'})
@@ -306,7 +305,7 @@ def get_achievements_by_time(request):
                     # 用'_'分割字符串，去除空，返回列表
                     'area': list(filter(None, achievement.area.split('_'))),
                     'create_time': achievement.create_time.strftime('%Y-%m-%d %H:%M:%S'),
-                } for achievement in achievements
+                } for achievement in achievements.order_by('-create_time')
             ]})
         else:
             return JsonResponse({'error': '1002', 'msg': '学术成果不存在'})
@@ -412,7 +411,7 @@ def get_report_list(request):
                     'result': report.result,
                     'admin_id': report.admin_id,
                     'create_time': report.create_time.strftime('%Y-%m-%d %H:%M:%S'),
-                } for report in report_list
+                } for report in report_list.order_by('-create_time')
             ]})
         else:
             return JsonResponse({'error': '1002', 'msg': '举报列表为空'})
@@ -438,7 +437,7 @@ def get_unchecked_report_list(request):
                     'result': report.result,
                     'admin_id': report.admin_id,
                     'create_time': report.create_time.strftime('%Y-%m-%d %H:%M:%S'),
-                } for report in report_list
+                } for report in report_list.order_by('-create_time')
             ]})
         else:
             return JsonResponse({'error': '1002', 'msg': '举报列表为空'})
@@ -464,7 +463,7 @@ def get_checked_report_list(request):
                     'result': report.result,
                     'admin_id': report.admin_id,
                     'create_time': report.create_time.strftime('%Y-%m-%d %H:%M:%S'),
-                } for report in report_list
+                } for report in report_list.order_by('-create_time')
             ]})
         else:
             return JsonResponse({'error': '1002', 'msg': '举报列表为空'})
@@ -491,7 +490,7 @@ def get_report_list_by_achievement(request):
                     'result': report.result,
                     'admin_id': report.admin_id,
                     'create_time': report.create_time.strftime('%Y-%m-%d %H:%M:%S'),
-                } for report in report_list
+                } for report in report_list.order_by('-create_time')
             ]})
         else:
             return JsonResponse({'error': '1002', 'msg': '举报列表为空'})
@@ -518,7 +517,7 @@ def get_report_list_by_user(request):
                     'result': report.result,
                     'admin_id': report.admin_id,
                     'create_time': report.create_time.strftime('%Y-%m-%d %H:%M:%S'),
-                } for report in report_list
+                } for report in report_list.order_by('-create_time')
             ]})
         else:
             return JsonResponse({'error': '1002', 'msg': '举报列表为空'})
@@ -545,7 +544,7 @@ def get_report_list_by_admin(request):
                     'result': report.result,
                     'admin_id': report.admin_id,
                     'create_time': report.create_time.strftime('%Y-%m-%d %H:%M:%S'),
-                } for report in report_list
+                } for report in report_list.order_by('-create_time')
             ]})
         else:
             return JsonResponse({'error': '1002', 'msg': '举报列表为空'})
