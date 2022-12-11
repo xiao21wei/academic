@@ -36,16 +36,13 @@ def send_register_email(request):
 # 判断验证码
 def check_code(toemail, code):
     if VerificationCode.objects.filter(email=toemail).exists():
-        verificationcode = VerificationCode.objects.filter(code=code, email=toemail)
+        verificationcode = VerificationCode.objects.filter(email=toemail)
         if not verificationcode.exists():
             return 'wrong'
         verifycode = verificationcode.first()
         if (datetime.datetime.now() - verifycode.time).seconds > 300:
             return 'wrong time'
-        if code == verificationcode.code:
-            return 'AC'
-        else:
-            return 'wrong'
+        return 'AC'
     else:
         return 'not exist'
 

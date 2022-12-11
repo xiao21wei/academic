@@ -146,12 +146,11 @@ def delete_achievement(request):
         if id == 0:
             return JsonResponse({'error': '-1', 'msg': '请先登录'})
         achievement_id = request.POST.get('achievement_id')
-        user_id = request.POST.get('user_id')
         achievement = Achievement.objects.get(achievement_id=achievement_id)
         if achievement:
             # 获取author_id的第一个值，即为作者id
             author_id = achievement.author_id.split('_')[1]
-            if author_id == user_id:
+            if author_id == id:
                 achievement.delete()
                 return JsonResponse({'error': '0', 'msg': '学术成果删除成功'})
             else:
@@ -335,10 +334,9 @@ def report_achievement(request):
         id = check_session(request)
         if id == 0:
             return JsonResponse({'error': '-1', 'msg': '请先登录'})
-        user_id = request.POST.get('user_id')
         achievement_id = request.POST.get('achievement_id')
         content = request.POST.get('content')
-        report = Report(send=user_id, achievement_id=achievement_id, content=content)
+        report = Report(send=id, achievement_id=achievement_id, content=content)
         report.save()
         return JsonResponse({'error': '0', 'msg': '举报提交成功'})
     else:
@@ -353,13 +351,12 @@ def check_report(request):
         if id == 0:
             return JsonResponse({'error': '-1', 'msg': '请先登录'})
         report_id = request.POST.get('report_id')
-        admin_id = request.POST.get('admin_id')
         result = request.POST.get('result')
         report = Report.objects.get(report_id=report_id)
         # 如果report.result为空，说明该举报未被审核
         if report.result == '':
             report.result = result
-            report.admin_id = admin_id
+            report.admin_id = id
             report.save()
             return JsonResponse({'error': '0', 'msg': '审核成功'})
         else:
@@ -560,12 +557,11 @@ def like_achievement(request):
         if id == 0:
             return JsonResponse({'error': '-1', 'msg': '请先登录'})
         achievement_id = request.POST.get('achievement_id')
-        user_id = request.POST.get('user_id')
-        like = Like.objects.filter(achievement_id=achievement_id, user_id=user_id)
+        like = Like.objects.filter(achievement_id=achievement_id, user_id=id)
         if like:
             return JsonResponse({'error': '1003', 'msg': '已点赞'})
         else:
-            like = Like.objects.create(achievement_id=achievement_id, user_id=user_id)
+            like = Like.objects.create(achievement_id=achievement_id, user_id=id)
             if like:
                 return JsonResponse({'error': '0', 'msg': '点赞成功'})
             else:
@@ -582,13 +578,12 @@ def cancel_like_achievement(request):
         if id == 0:
             return JsonResponse({'error': '-1', 'msg': '请先登录'})
         achievement_id = request.POST.get('achievement_id')
-        user_id = request.POST.get('user_id')
-        like = Like.objects.filter(achievement_id=achievement_id, user_id=user_id)
+        like = Like.objects.filter(achievement_id=achievement_id, user_id=id)
         if like:
             like.delete()
             return JsonResponse({'error': '0', 'msg': '取消点赞成功'})
         else:
-            return JsonResponse({'error': '1003', 'msg': '未点赞'})
+            return JsonResponse({'error': '1002', 'msg': '未点赞'})
     else:
         return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
 
@@ -657,9 +652,8 @@ def comment_achievement(request):
         if id == 0:
             return JsonResponse({'error': '-1', 'msg': '请先登录'})
         achievement_id = request.POST.get('achievement_id')
-        user_id = request.POST.get('user_id')
         content = request.POST.get('content')
-        comment = Comment.objects.create(achievement_id=achievement_id, user_id=user_id, content=content)
+        comment = Comment.objects.create(achievement_id=achievement_id, user_id=id, content=content)
         if comment:
             return JsonResponse({'error': '0', 'msg': '评论成功'})
         else:
@@ -682,7 +676,7 @@ def delete_comment(request):
             comment.delete()
             return JsonResponse({'error': '0', 'msg': '删除成功'})
         else:
-            return JsonResponse({'error': '1003', 'msg': '评论不存在'})
+            return JsonResponse({'error': '1002', 'msg': '评论不存在'})
     else:
         return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
 
@@ -769,12 +763,11 @@ def collect_achievement(request):
         if id == 0:
             return JsonResponse({'error': '-1', 'msg': '请先登录'})
         achievement_id = request.POST.get('achievement_id')
-        user_id = request.POST.get('user_id')
-        collect = Collection.objects.filter(achievement_id=achievement_id, user_id=user_id)
+        collect = Collection.objects.filter(achievement_id=achievement_id, user_id=id)
         if collect:
             return JsonResponse({'error': '1003', 'msg': '已收藏'})
         else:
-            collect = Collection.objects.create(achievement_id=achievement_id, user_id=user_id)
+            collect = Collection.objects.create(achievement_id=achievement_id, user_id=id)
             if collect:
                 return JsonResponse({'error': '0', 'msg': '收藏成功'})
             else:
@@ -791,13 +784,12 @@ def cancel_collect_achievement(request):
         if id == 0:
             return JsonResponse({'error': '-1', 'msg': '请先登录'})
         achievement_id = request.POST.get('achievement_id')
-        user_id = request.POST.get('user_id')
-        collect = Collection.objects.filter(achievement_id=achievement_id, user_id=user_id)
+        collect = Collection.objects.filter(achievement_id=achievement_id, user_id=id)
         if collect:
             collect.delete()
             return JsonResponse({'error': '0', 'msg': '取消收藏成功'})
         else:
-            return JsonResponse({'error': '1003', 'msg': '未收藏'})
+            return JsonResponse({'error': '1002', 'msg': '未收藏'})
     else:
         return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
 

@@ -33,7 +33,6 @@ with open(BASE_DIR / 'secrets.yaml', 'r') as f:
     mail_password = secrets['MAIL']['password']
     redis_host = secrets['REDIS']['host']
     redis_port = secrets['REDIS']['port']
-    redis_password = secrets['REDIS']['password']
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
@@ -136,7 +135,6 @@ CACHES = {
         "LOCATION": "redis://{}:{}/1".format(redis_host, redis_port),
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-            'PASSWORD': redis_password,
         }
     }
 }
