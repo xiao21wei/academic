@@ -108,8 +108,8 @@ def login(request):
 
     request.session['user'] = username
     request.session['is_login'] = True
-    user = User.objects.filter(username=username)
-    return JsonResponse({'error': '0', 'msg': '登录成功', 'user': user})
+    user = User.objects.get(username=username)
+    return JsonResponse({'error': '0', 'msg': '登录成功', 'data': user.to_json()})
 
 
 # 登出
@@ -174,7 +174,10 @@ def get_user_by_username(request):
     if request.method != 'GET':
         return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
     username = request.GET.get('username')
-    user = User.objects.filter(username__icontain=username)
-    return JsonResponse({'error': '0', 'user': user})
+    users = User.objects.filter(username__icontain=username)
+    res = []
+    for user in users:
+        res.appand(user.to_json)
+    return JsonResponse({'error': '0', 'user': res})
 
 
