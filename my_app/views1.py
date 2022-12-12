@@ -1,4 +1,6 @@
 from django.views.decorators.csrf import csrf_exempt
+
+from academic.tools import check_session
 from my_app.models import *
 from django.http import JsonResponse
 import re

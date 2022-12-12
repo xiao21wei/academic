@@ -145,6 +145,7 @@ class Chat(models.Model):  # Chat is a class that inherits from models.Model
     receive = models.IntegerField(unique=False)
     content = models.CharField(max_length=256, unique=False)
     send_time = models.DateTimeField(auto_now_add=True)
+    received = models.BooleanField(null=False, default=False)  # 是否收到
 
     def __str__(self):
         return self.name
