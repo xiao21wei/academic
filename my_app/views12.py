@@ -149,7 +149,7 @@ def get_intro_by_username(request):
 def set_scholar(request):
     if request.method != 'POST':
         return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
-    username = request.GET.get('username')
+    username = request.POST.get('username')
     user = User.objects.get(username=username)
     user.identity = 1
     user.save()
@@ -161,9 +161,20 @@ def set_scholar(request):
 def set_intro(request):
     if request.method != 'POST':
         return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
-    intro = request.GET.get('intro')
+    intro = request.POST.get('intro')
     username = request.session.get('user')
     user = User.objects.get(username=username)
     user.intro = intro
     user.save()
     return JsonResponse({'error': '0', 'msg': '设置成功'})
+
+
+@csrf_exempt
+def get_user_by_username(request):
+    if request.method != 'GET':
+        return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
+    username = request.GET.get('username')
+    user = User.objects.filter(username__icontain=username)
+    return JsonResponse({'error': '0', 'user': user})
+
+
