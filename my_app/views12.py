@@ -108,7 +108,8 @@ def login(request):
 
     request.session['user'] = username
     request.session['is_login'] = True
-    return JsonResponse({'error': '0', 'msg': '登录成功'})
+    user = User.objects.filter(username=username)
+    return JsonResponse({'error': '0', 'msg': '登录成功', 'user': user})
 
 
 # 登出
