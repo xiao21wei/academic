@@ -8,5 +8,6 @@ urlpatterns = [
     path('create_team', create_team, name='create_team'),
     path('invite_member', invite_member, name='invite_member'),
     path('change_intro', change_intro, name='change_intro'),
-
+    path('hot_achievement', hot_achievement, name='hot_achievement'),
+    path('recommend_achievement', recommend_achievement, name='recommend_achievement'),
 ]

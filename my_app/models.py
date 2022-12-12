@@ -66,6 +66,7 @@ class Achievement(models.Model):  # Achievement is a class that inherits from mo
     create_time = models.DateTimeField(auto_now_add=True)
     type = models.IntegerField(unique=False, default=0)
     area = models.CharField(max_length=256, unique=False, default='未填写')
+    hot = models.IntegerField(default=0)
 
     def __str__(self):
         return self.name

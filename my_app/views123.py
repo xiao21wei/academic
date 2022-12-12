@@ -1,4 +1,3 @@
-
 from academic.tools import check_session
 from django.db.models import Q
 from django.http import JsonResponse
@@ -6,18 +5,16 @@ from django.views.decorators.csrf import csrf_exempt
 from .models import *
 
 
-
-
 # 发送私聊-保存
 @csrf_exempt  # 跨域设置
-def send_chat(request):#不要给自己发送消息
+def send_chat(request):  # 不要给自己发送消息
     if request.method == 'POST':
         content = request.POST.get('content')
         receive = request.POST.get('receive')
         id = check_session(request)
         if id == 0:
             return JsonResponse({'error': '-1', 'msg': '请先登录'})
-        send=id
+        send = id
         if receive == send:
             return JsonResponse({'error': '1002', 'msg': '无法给自己发消息'})
 
@@ -100,16 +97,16 @@ def chat_history(request):  # 两人所有的聊天记录
         return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
 
 
-#队长建立队伍
+# 队长建立队伍
 @csrf_exempt  # 跨域设置
 def create_team(request):
     if request.method == 'POST':
         id = check_session(request)
         if id == 0:
             return JsonResponse({'error': '-1', 'msg': '请先登录'})
-        #队伍名称
+        # 队伍名称
         name = request.POST.get('name')
-        intro= request.POST.get('intro')
+        intro = request.POST.get('intro')
         nowuser = User.objects.get(id=id)
         user_name = nowuser.username
         user_list = user_name
@@ -123,15 +120,15 @@ def create_team(request):
         return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
 
 
-#邀请成员，队伍中的每个人都可以邀请成员
+# 邀请成员，队伍中的每个人都可以邀请成员
 @csrf_exempt  # 跨域设置
 def invite_member(request):
     if request.method == 'POST':
         id = check_session(request)
         if id == 0:
             return JsonResponse({'error': '-1', 'msg': '请先登录'})
-        #被邀请成员id
-        invite_id=request.post.get('invited_id')
+        # 被邀请成员id
+        invite_id = request.post.get('invited_id')
         invite_user = User.objects.get(id=invite_id)
         if invite_user.team_id != 'NULL':
             return JsonResponse({'error': '1002', 'msg': '被邀请成员已有团队'})
@@ -141,14 +138,15 @@ def invite_member(request):
             return JsonResponse({'error': '1003', 'msg': '发出邀请者必须已有团队'})
         team = Team.objects.get(team_id=nowuser.team_id)
         invite_user.team_id = team.team_id
-        team.user_list = team.user_list+','+invite_user.username
+        team.user_list = team.user_list + ',' + invite_user.username
         team.save()  # 保存到数据库
         invite_user.save()
         return JsonResponse({'error': '0', 'msg': '邀请成功'})
     else:
         return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
 
-#队长更改简介
+
+# 队长更改简介
 @csrf_exempt  # 跨域设置
 def change_intro(request):
     if request.method == 'POST':
@@ -164,8 +162,75 @@ def change_intro(request):
         leader = namelist[0]
         if leader != nowuser.username:
             return JsonResponse({'error': '1003', 'msg': '您不是队长'})
-        team.intro=intro
+        team.intro = intro
         team.save()
         return JsonResponse({'error': '0', 'msg': '更改成功'})
+    else:
+        return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
+
+
+# 热门文章
+@csrf_exempt  # 跨域设置
+def hot_achievement(request):
+    if request.method == 'POST':
+        for like in Like.objects.all():
+            achievement = Achievement.objects.get(achievement_id=like.achievement_id)
+            achievement.hot = achievement.hot + 1
+
+        for collection in Collection.objects.all():
+            achievement = Achievement.objects.get(achievement_id=collection.achievement_id)
+            achievement.hot = achievement.hot + 2
+        # 返回5篇
+        achievements = Achievement.objects.all().order_by('-hot')[:5]
+        if achievements:
+            return JsonResponse({'error': '0', 'msg': '获取热门学术成果成功', 'data': [
+                {
+                    'achievement_id': achievement.achievement_id,
+                    'name': achievement.name,
+                    # 用'_'分割字符串，去除空，返回列表
+                    'author_id': list(filter(None, achievement.author_id.split('_'))),
+                    'intro': achievement.intro,
+                    'url': achievement.url,
+                    'type': achievement.type,
+                    # 用'_'分割字符串，去除空，返回列表
+                    'area': list(filter(None, achievement.area.split('_'))),
+                    'create_time': achievement.create_time.strftime('%Y-%m-%d %H:%M:%S'),
+                } for achievement in achievements.order_by('-create_time')
+            ]})
+        else:
+            return JsonResponse({'error': '1002', 'msg': '学术成果不存在'})
+    else:
+        return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
+
+# 热门文章
+@csrf_exempt  # 跨域设置
+def recommend_achievement(request):
+    if request.method == 'POST':
+        for like in Like.objects.all():
+            achievement = Achievement.objects.get(achievement_id=like.achievement_id)
+            achievement.hot = achievement.hot + 4
+
+        for collection in Collection.objects.all():
+            achievement = Achievement.objects.get(achievement_id=collection.achievement_id)
+            achievement.hot = achievement.hot + 1
+        # 返回5篇
+        achievements = Achievement.objects.all().order_by('-hot')[:5]
+        if achievements:
+            return JsonResponse({'error': '0', 'msg': '获取推荐学术成果成功', 'data': [
+                {
+                    'achievement_id': achievement.achievement_id,
+                    'name': achievement.name,
+                    # 用'_'分割字符串，去除空，返回列表
+                    'author_id': list(filter(None, achievement.author_id.split('_'))),
+                    'intro': achievement.intro,
+                    'url': achievement.url,
+                    'type': achievement.type,
+                    # 用'_'分割字符串，去除空，返回列表
+                    'area': list(filter(None, achievement.area.split('_'))),
+                    'create_time': achievement.create_time.strftime('%Y-%m-%d %H:%M:%S'),
+                } for achievement in achievements.order_by('-create_time')
+            ]})
+        else:
+            return JsonResponse({'error': '1002', 'msg': '学术成果不存在'})
     else:
         return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
