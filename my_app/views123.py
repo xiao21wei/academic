@@ -14,9 +14,12 @@ def send_chat(request):#不要给自己发送消息
     if request.method == 'POST':
         content = request.POST.get('content')
         receive = request.POST.get('receive')
-        send = request.POST.get('send')
+        id = check_session(request)
+        if id == 0:
+            return JsonResponse({'error': '-1', 'msg': '请先登录'})
+        send=id
         if receive == send:
-            return JsonResponse({'error': '1003', 'msg': '无法给自己发消息'})
+            return JsonResponse({'error': '1002', 'msg': '无法给自己发消息'})
 
         chat = Chat(send=send, receive=receive, content=content)
         chat.save()
@@ -29,7 +32,10 @@ def send_chat(request):#不要给自己发送消息
 @csrf_exempt  # 跨域设置
 def receive_chat(request):  # 收到之前未收到的的消息
     if request.method == 'POST':
-        receive = request.POST.get('receive')
+        id = check_session(request)
+        if id == 0:
+            return JsonResponse({'error': '-1', 'msg': '请先登录'})
+        receive = id
         send = request.POST.get('send')
         all_chat = list()
         num = Chat.objects.filter(receive=receive, send=send).count()
@@ -152,12 +158,12 @@ def change_intro(request):
         intro = request.post.get('intro')
         nowuser = User.objects.get(id=id)
         if nowuser.team_id == 'NULL':
-            return JsonResponse({'error': '1001', 'msg': '您没有团队'})
+            return JsonResponse({'error': '1002', 'msg': '您没有团队'})
         team = Team.objects.get(team_id=nowuser.team_id)
         namelist = team.user_list.split(',')
         leader = namelist[0]
         if leader != nowuser.username:
-            return JsonResponse({'error': '1001', 'msg': '您不是队长'})
+            return JsonResponse({'error': '1003', 'msg': '您不是队长'})
         team.intro=intro
         team.save()
         return JsonResponse({'error': '0', 'msg': '更改成功'})
