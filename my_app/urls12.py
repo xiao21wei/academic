@@ -11,4 +11,6 @@ urlpatterns = [
     path('get_intro_by_username', get_intro_by_username, name='get_intro_by_username'),
     path('set_scholar', set_scholar, name='set_scholar'),
     path('set_intro', set_intro, name='set_intro'),
+    path('change_email', change_email, name='change_email'),
+    path('change_password', change_password, name='change_password'),
 ]

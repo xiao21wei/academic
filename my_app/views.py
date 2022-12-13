@@ -2,6 +2,7 @@ import os
 import random
 import time
 import uuid
+from django.db.models import Q
 
 from django import forms
 from django.db import transaction
@@ -24,20 +25,20 @@ from my_app.models import *
 @csrf_exempt  # 跨域设置
 def publish_achievement(request):
     if request.method == 'POST':
-        id = check_session(request)
-        if id == 0:
-            return JsonResponse({'error': '-1', 'msg': '请先登录'})
+        # id = check_session(request)
+        # if id == 0:
+        #     return JsonResponse({'error': '-1', 'msg': '请先登录'})
         name = request.POST.get('name')
-        # 获取author_id列表信息，并用'_'拼接成字符串
-        author_id = '_'.join(request.POST.getlist('author_id'))
-        author_id = '_'+author_id+'_'
+        # 获取author列表信息，并用'_'拼接成字符串
+        author = '_'.join(request.POST.getlist('author'))
+        author = '_'+author+'_'
         intro = request.POST.get('intro')
         url = request.POST.get('url')
         type = request.POST.get('type')
         # 获取area列表信息，并用'_'拼接成字符串
         area = '_'.join(request.POST.getlist('area'))
         area = '_'+area+'_'
-        achievement = Achievement(name=name, author_id=author_id, intro=intro, url=url, type=type, area=area)
+        achievement = Achievement(name=name, author=author, intro=intro, url=url, type=type, area=area)
         achievement.save()  # 保存到数据库
         return JsonResponse({'error': '0', 'msg': '学术成果发布成功'})
     else:
@@ -48,24 +49,52 @@ def publish_achievement(request):
 @csrf_exempt  # 跨域设置
 def get_achievement(request):
     if request.method == 'POST':
-        id = check_session(request)
-        if id == 0:
-            return JsonResponse({'error': '-1', 'msg': '请先登录'})
+        # id = check_session(request)
+        # if id == 0:
+        #     return JsonResponse({'error': '-1', 'msg': '请先登录'})
         achievement_id = request.POST.get('achievement_id')
         achievement = Achievement.objects.get(achievement_id=achievement_id)
         if achievement:
-            return JsonResponse({'error': '0', 'msg': '获取学术成果成功', 'data': {
-                'achievement_id': achievement.achievement_id,
-                'name': achievement.name,
-                # 用'_'分割字符串，去除空，返回列表
-                'author_id': list(filter(None, achievement.author_id.split('_'))),
-                'intro': achievement.intro,
-                'url': achievement.url,
-                'type': achievement.type,
-                # 用'_'分割字符串，去除空，返回列表
-                'area': list(filter(None, achievement.area.split('_'))),
-                'create_time': achievement.create_time.strftime('%Y-%m-%d %H:%M:%S'),
-            }})
+            authors = []
+            for author_name in list(filter(None, achievement.author.split('_'))):
+                affiliation_id = ''
+                affiliation_name = ''
+                author_id = ''
+                if User.objects.filter(real_name=author_name).exists():
+                    author = User.objects.filter(real_name=author_name).first()
+                    author_id = str(author.user_id)
+                    if Team.objects.filter(team_id=author.team_id).exists():
+                        team = Team.objects.filter(team_id=author.team_id).first()
+                        affiliation_id = str(team.team_id)
+                        affiliation_name = team.name
+                authors.append({
+                    'affiliation_id': affiliation_id,
+                    'affiliation_name': affiliation_name,
+                    'affiliation_order': 1,
+                    'author_id': author_id,
+                    'author_name': author_name,
+                    'order': ""
+                })
+            fields = [{
+                'citation_count': 0,
+                'field_id': '',
+                'level': 1,
+                'main_type': '',
+                'name': area,
+                'paper_count': 0,
+                'rank': 0
+            } for area in list(filter(None, achievement.area.split('_')))]
+            article = {'author_affiliation': [], 'authors': authors, 'fields': fields,
+                       'paper_id': str(achievement.achievement_id), 'paper_title': achievement.name,
+                       'abstract': achievement.intro,
+                       'citation_count': 0,
+                       'comment_count': Comment.objects.filter(achievement_id=achievement.achievement_id).count(),
+                       'year': 2022,
+                       'collection_count': Collection.objects.filter(achievement_id=achievement.achievement_id).count(),
+                       'like_count': Like.objects.filter(achievement_id=achievement.achievement_id).count(),
+                       'reference_count': 0,
+                       'is_collect': True, }
+            return JsonResponse({'error': '0', 'msg': '获取成功', 'article': article})
         else:
             return JsonResponse({'error': '1002', 'msg': '学术成果不存在'})
     else:
@@ -81,20 +110,45 @@ def get_achievements(request):
             return JsonResponse({'error': '-1', 'msg': '请先登录'})
         achievements = Achievement.objects.all()
         if achievements:
-            return JsonResponse({'error': '0', 'msg': '获取学术成果成功', 'data': [  # 结果按照create_time降序排列
-                {
-                    'achievement_id': achievement.achievement_id,
-                    'name': achievement.name,
-                    # 用'_'分割字符串，去除空，返回列表
-                    'author_id': list(filter(None, achievement.author_id.split('_'))),
-                    'intro': achievement.intro,
-                    'url': achievement.url,
-                    'type': achievement.type,
-                    # 用'_'分割字符串，去除空，返回列表
-                    'area': list(filter(None, achievement.area.split('_'))),
-                    'create_time': achievement.create_time.strftime('%Y-%m-%d %H:%M:%S'),
-                } for achievement in achievements.order_by('-create_time')
-            ]})
+            articles = []
+            for achievement in achievements.order_by('-create_time'):
+                authors = []
+                for author_name in list(filter(None, achievement.author.split('_'))):
+                    affiliation_id = ''
+                    affiliation_name = ''
+                    author_id = ''
+                    if User.objects.filter(real_name=author_name).exists():
+                        author = User.objects.filter(real_name=author_name).first()
+                        author_id = str(author.user_id)
+                        if Team.objects.filter(team_id=author.team_id).exists():
+                            team = Team.objects.filter(team_id=author.team_id).first()
+                            affiliation_id = str(team.team_id)
+                            affiliation_name = team.name
+                    authors.append({
+                        'affiliation_id': affiliation_id,
+                        'affiliation_name': affiliation_name,
+                        'affiliation_order': 1,
+                        'author_id': author_id,
+                        'author_name': author_name,
+                        'order': ""
+                    })
+                fields = [{
+                    'citation_count': 0,
+                    'field_id': '',
+                    'level': 1,
+                    'main_type': '',
+                    'name': area,
+                    'paper_count': 0,
+                    'rank': 0
+                } for area in list(filter(None, achievement.area.split('_')))]
+                article = {'author_affiliation': [], 'authors': authors, 'fields': fields,
+                           'paper_id': str(achievement.achievement_id), 'paper_title': achievement.name,
+                           'abstract': achievement.intro,
+                           'citation_count': 0, 'comment_count': 0, 'year': 2022, 'reference_count': 0,
+                           'is_collect': True, }
+
+                articles.append(article)
+            return JsonResponse({'error': '0', 'msg': '获取学术成果成功', 'len': len(achievements), 'articles': articles})
         else:
             return JsonResponse({'error': '1002', 'msg': '学术成果不存在'})
     else:
@@ -111,15 +165,15 @@ def update_achievement(request):
         achievement_id = request.POST.get('achievement_id')
         achievement = Achievement.objects.get(achievement_id=achievement_id)
         if achievement:
-            # 获取author_id的第一个值，即为作者id
-            author_id = achievement.author_id.split('_')[0]
-            if author_id == id:
+            # 获取author的第一个值，即为作者id
+            author = achievement.author.split('_')[0]
+            if author == id:
                 name = request.POST.get('name')
                 intro = request.POST.get('intro')
                 url = request.POST.get('url')
                 type = request.POST.get('type')
-                author_id = '_'.join(request.POST.getlist('author_id'))
-                author_id = '_'+author_id+'_'
+                author = '_'.join(request.POST.getlist('author'))
+                author = '_'+author+'_'
                 area = '_'.join(request.POST.getlist('area'))
                 area = '_'+area+'_'
                 achievement.area = area
@@ -127,7 +181,7 @@ def update_achievement(request):
                 achievement.intro = intro
                 achievement.url = url
                 achievement.type = type
-                achievement.author_id = author_id
+                achievement.author = author
                 achievement.save()
                 return JsonResponse({'error': '0', 'msg': '学术成果更新成功'})
             else:
@@ -148,9 +202,10 @@ def delete_achievement(request):
         achievement_id = request.POST.get('achievement_id')
         achievement = Achievement.objects.get(achievement_id=achievement_id)
         if achievement:
-            # 获取author_id的第一个值，即为作者id
-            author_id = achievement.author_id.split('_')[1]
-            if author_id == id:
+            # 获取author的第一个值，即为作者id
+            author = achievement.author.split('_')[1]
+            name = User.objects.get(user_id=id)
+            if author == name:
                 achievement.delete()
                 return JsonResponse({'error': '0', 'msg': '学术成果删除成功'})
             else:
@@ -169,14 +224,14 @@ def get_achievements_by_area(request):
         if id == 0:
             return JsonResponse({'error': '-1', 'msg': '请先登录'})
         area = request.POST.get('area')
-        achievements = Achievement.objects.filter(area__contains='_'+area+'_')
+        achievements = Achievement.objects.filter(area__contains=area)
         if achievements:
             return JsonResponse({'error': '0', 'msg': '获取学术成果成功', 'data': [
                 {
                     'achievement_id': achievement.achievement_id,
                     'name': achievement.name,
                     # 用'_'分割字符串，去除空，返回列表
-                    'author_id': list(filter(None, achievement.author_id.split('_'))),
+                    'author': list(filter(None, achievement.author.split('_'))),
                     'intro': achievement.intro,
                     'url': achievement.url,
                     'type': achievement.type,
@@ -206,7 +261,7 @@ def get_achievements_by_type(request):
                     'achievement_id': achievement.achievement_id,
                     'name': achievement.name,
                     # 用'_'分割字符串，去除空，返回列表
-                    'author_id': list(filter(None, achievement.author_id.split('_'))),
+                    'author': list(filter(None, achievement.author.split('_'))),
                     'intro': achievement.intro,
                     'url': achievement.url,
                     'type': achievement.type,
@@ -236,7 +291,7 @@ def get_achievements_by_name(request):
                     'achievement_id': achievement.achievement_id,
                     'name': achievement.name,
                     # 用'_'分割字符串，去除空，返回列表
-                    'author_id': list(filter(None, achievement.author_id.split('_'))),
+                    'author': list(filter(None, achievement.author.split('_'))),
                     'intro': achievement.intro,
                     'url': achievement.url,
                     'type': achievement.type,
@@ -251,7 +306,7 @@ def get_achievements_by_name(request):
         return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
 
 
-# 通过作者id获取学术成果
+# 通过作者获取学术成果
 @csrf_exempt  # 跨域设置
 def get_achievements_by_author(request):
     if request.method == 'POST':
@@ -259,14 +314,15 @@ def get_achievements_by_author(request):
         if id == 0:
             return JsonResponse({'error': '-1', 'msg': '请先登录'})
         author = request.POST.get('author')
-        achievements = Achievement.objects.filter(author_id__contains='_'+author+'_')
+        # 根据作者的名字查找用户id,然后根据用户id查找学术成果
+        achievements = Achievement.objects.filter(author__contains='_' + author + '_')
         if achievements:
             return JsonResponse({'error': '0', 'msg': '获取学术成果成功', 'data': [
                 {
                     'achievement_id': achievement.achievement_id,
                     'name': achievement.name,
                     # 用'_'分割字符串，去除空，返回列表
-                    'author_id': list(filter(None, achievement.author_id.split('_'))),
+                    'author': list(filter(None, achievement.author.split('_'))),
                     'intro': achievement.intro,
                     'url': achievement.url,
                     'type': achievement.type,
@@ -276,7 +332,7 @@ def get_achievements_by_author(request):
                 } for achievement in achievements.order_by('-create_time')
             ]})
         else:
-            return JsonResponse({'error': '1002', 'msg': '学术成果不存在'})
+            return JsonResponse({'error': '1002', 'msg': '作者不存在'})
     else:
         return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
 
@@ -297,7 +353,7 @@ def get_achievements_by_time(request):
                     'achievement_id': achievement.achievement_id,
                     'name': achievement.name,
                     # 用'_'分割字符串，去除空，返回列表
-                    'author_id': list(filter(None, achievement.author_id.split('_'))),
+                    'author': list(filter(None, achievement.author.split('_'))),
                     'intro': achievement.intro,
                     'url': achievement.url,
                     'type': achievement.type,
@@ -553,15 +609,16 @@ def get_report_list_by_admin(request):
 @csrf_exempt  # 跨域设置
 def like_achievement(request):
     if request.method == 'POST':
-        id = check_session(request)
-        if id == 0:
-            return JsonResponse({'error': '-1', 'msg': '请先登录'})
+        # id = check_session(request)
+        # if id == 0:
+        #     return JsonResponse({'error': '-1', 'msg': '请先登录'})
+        user_id = request.POST.get('user_id')
         achievement_id = request.POST.get('achievement_id')
-        like = Like.objects.filter(achievement_id=achievement_id, user_id=id)
+        like = Like.objects.filter(achievement_id=achievement_id, user_id=user_id)
         if like:
             return JsonResponse({'error': '1003', 'msg': '已点赞'})
         else:
-            like = Like.objects.create(achievement_id=achievement_id, user_id=id)
+            like = Like.objects.create(achievement_id=achievement_id, user_id=user_id)
             if like:
                 return JsonResponse({'error': '0', 'msg': '点赞成功'})
             else:
@@ -574,11 +631,12 @@ def like_achievement(request):
 @csrf_exempt  # 跨域设置
 def cancel_like_achievement(request):
     if request.method == 'POST':
-        id = check_session(request)
-        if id == 0:
-            return JsonResponse({'error': '-1', 'msg': '请先登录'})
+        # id = check_session(request)
+        # if id == 0:
+        #     return JsonResponse({'error': '-1', 'msg': '请先登录'})
+        user_id = request.POST.get('user_id')
         achievement_id = request.POST.get('achievement_id')
-        like = Like.objects.filter(achievement_id=achievement_id, user_id=id)
+        like = Like.objects.filter(achievement_id=achievement_id, user_id=user_id)
         if like:
             like.delete()
             return JsonResponse({'error': '0', 'msg': '取消点赞成功'})
@@ -592,9 +650,9 @@ def cancel_like_achievement(request):
 @csrf_exempt  # 跨域设置
 def get_like_list_by_achievement(request):
     if request.method == 'POST':
-        id = check_session(request)
-        if id == 0:
-            return JsonResponse({'error': '-1', 'msg': '请先登录'})
+        # id = check_session(request)
+        # if id == 0:
+        #     return JsonResponse({'error': '-1', 'msg': '请先登录'})
         achievement_id = request.POST.get('achievement_id')
         like_list = Like.objects.filter(achievement_id=achievement_id)
         if like_list:
@@ -613,9 +671,9 @@ def get_like_list_by_achievement(request):
 @csrf_exempt  # 跨域设置
 def get_like_list_by_user(request):
     if request.method == 'POST':
-        id = check_session(request)
-        if id == 0:
-            return JsonResponse({'error': '-1', 'msg': '请先登录'})
+        # id = check_session(request)
+        # if id == 0:
+        #     return JsonResponse({'error': '-1', 'msg': '请先登录'})
         user_id = request.POST.get('user_id')
         like_list = Like.objects.filter(user_id=user_id)
         if like_list:
@@ -634,12 +692,16 @@ def get_like_list_by_user(request):
 @csrf_exempt  # 跨域设置
 def get_like_count_by_achievement(request):
     if request.method == 'POST':
-        id = check_session(request)
-        if id == 0:
-            return JsonResponse({'error': '-1', 'msg': '请先登录'})
+        # id = check_session(request)
+        # if id == 0:
+        #     return JsonResponse({'error': '-1', 'msg': '请先登录'})
         achievement_id = request.POST.get('achievement_id')
         like_count = Like.objects.filter(achievement_id=achievement_id).count()
-        return JsonResponse({'error': '0', 'msg': '获取点赞数成功', 'data': like_count})
+        has_like = Like.objects.filter(achievement_id=achievement_id, user_id=id)
+        if has_like:
+            return JsonResponse({'error': '0', 'msg': '获取点赞数成功', 'data': like_count, 'has_like': 1})
+        else:
+            return JsonResponse({'error': '0', 'msg': '获取点赞数成功', 'data': like_count, 'has_like': 0})
     else:
         return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
 
@@ -648,12 +710,13 @@ def get_like_count_by_achievement(request):
 @csrf_exempt  # 跨域设置
 def comment_achievement(request):
     if request.method == 'POST':
-        id = check_session(request)
-        if id == 0:
-            return JsonResponse({'error': '-1', 'msg': '请先登录'})
+        # id = check_session(request)
+        # if id == 0:
+        #     return JsonResponse({'error': '-1', 'msg': '请先登录'})
+        user_id = request.POST.get('user_id')
         achievement_id = request.POST.get('achievement_id')
         content = request.POST.get('content')
-        comment = Comment.objects.create(achievement_id=achievement_id, user_id=id, content=content)
+        comment = Comment.objects.create(achievement_id=achievement_id, user_id=user_id, content=content)
         if comment:
             return JsonResponse({'error': '0', 'msg': '评论成功'})
         else:
@@ -666,9 +729,9 @@ def comment_achievement(request):
 @csrf_exempt  # 跨域设置
 def delete_comment(request):
     if request.method == 'POST':
-        id = check_session(request)
-        if id == 0:
-            return JsonResponse({'error': '-1', 'msg': '请先登录'})
+        # id = check_session(request)
+        # if id == 0:
+        #     return JsonResponse({'error': '-1', 'msg': '请先登录'})
         comment_id = request.POST.get('comment_id')
         user_id = request.POST.get('user_id')
         comment = Comment.objects.filter(id=comment_id, user_id=user_id)
@@ -685,21 +748,24 @@ def delete_comment(request):
 @csrf_exempt  # 跨域设置
 def get_comment_list_by_achievement(request):
     if request.method == 'POST':
-        id = check_session(request)
-        if id == 0:
-            return JsonResponse({'error': '-1', 'msg': '请先登录'})
+        # id = check_session(request)
+        # if id == 0:
+        #     return JsonResponse({'error': '-1', 'msg': '请先登录'})
         achievement_id = request.POST.get('achievement_id')
         comment_list = Comment.objects.filter(achievement_id=achievement_id)
         if comment_list:
-            return JsonResponse({'error': '0', 'msg': '获取评论列表成功', 'data': [
+            return JsonResponse({'error': '0', 'msg': '获取评论列表成功', 'comments': [
                 {
+                    'id': comment.comment_id,
                     'user_id': comment.user_id,
+                    'user_name': User.objects.get(user_id=comment.user_id).username,
+                    'achievement_id': comment.achievement_id,
                     'content': comment.content,
-                    'create_time': comment.create_time.strftime('%Y-%m-%d %H:%M:%S'),
+                    'time': comment.time.strftime('%Y-%m-%d %H:%M:%S'),
                 } for comment in comment_list
             ]})
         else:
-            return JsonResponse({'error': '1002', 'msg': '评论列表为空'})
+            return JsonResponse({'error': '1', 'msg': '评论列表为空'})
     else:
         return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
 
@@ -708,21 +774,24 @@ def get_comment_list_by_achievement(request):
 @csrf_exempt  # 跨域设置
 def get_comment_list_by_user(request):
     if request.method == 'POST':
-        id = check_session(request)
-        if id == 0:
-            return JsonResponse({'error': '-1', 'msg': '请先登录'})
+        # id = check_session(request)
+        # if id == 0:
+        #     return JsonResponse({'error': '-1', 'msg': '请先登录'})
         user_id = request.POST.get('user_id')
         comment_list = Comment.objects.filter(user_id=user_id)
         if comment_list:
-            return JsonResponse({'error': '0', 'msg': '获取评论列表成功', 'data': [
+            return JsonResponse({'error': '0', 'msg': '获取评论列表成功', 'comments': [
                 {
+                    'id': comment.comment_id,
                     'achievement_id': comment.achievement_id,
+                    'user_id': comment.user_id,
+                    'user_name': User.objects.get(user_id=comment.user_id).username,
                     'content': comment.content,
-                    'create_time': comment.create_time.strftime('%Y-%m-%d %H:%M:%S'),
+                    'time': comment.time.strftime('%Y-%m-%d %H:%M:%S'),
                 } for comment in comment_list
             ]})
         else:
-            return JsonResponse({'error': '1002', 'msg': '评论列表为空'})
+            return JsonResponse({'error': '1', 'msg': '评论列表为空'})
     else:
         return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
 
@@ -731,12 +800,12 @@ def get_comment_list_by_user(request):
 @csrf_exempt  # 跨域设置
 def get_comment_count_by_achievement(request):
     if request.method == 'POST':
-        id = check_session(request)
-        if id == 0:
-            return JsonResponse({'error': '-1', 'msg': '请先登录'})
+        # id = check_session(request)
+        # if id == 0:
+        #     return JsonResponse({'error': '-1', 'msg': '请先登录'})
         achievement_id = request.POST.get('achievement_id')
         comment_count = Comment.objects.filter(achievement_id=achievement_id).count()
-        return JsonResponse({'error': '0', 'msg': '获取评论数成功', 'data': comment_count})
+        return JsonResponse({'error': '0', 'msg': '获取评论数成功', 'comment_count': comment_count})
     else:
         return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
 
@@ -745,12 +814,12 @@ def get_comment_count_by_achievement(request):
 @csrf_exempt  # 跨域设置
 def get_comment_count_by_user(request):
     if request.method == 'POST':
-        id = check_session(request)
-        if id == 0:
-            return JsonResponse({'error': '-1', 'msg': '请先登录'})
+        # id = check_session(request)
+        # if id == 0:
+        #     return JsonResponse({'error': '-1', 'msg': '请先登录'})
         user_id = request.POST.get('user_id')
         comment_count = Comment.objects.filter(user_id=user_id).count()
-        return JsonResponse({'error': '0', 'msg': '获取评论数成功', 'data': comment_count})
+        return JsonResponse({'error': '0', 'msg': '获取评论数成功', 'comment_count': comment_count})
     else:
         return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
 
@@ -759,15 +828,16 @@ def get_comment_count_by_user(request):
 @csrf_exempt  # 跨域设置
 def collect_achievement(request):
     if request.method == 'POST':
-        id = check_session(request)
-        if id == 0:
-            return JsonResponse({'error': '-1', 'msg': '请先登录'})
+        # id = check_session(request)
+        # if id == 0:
+        #     return JsonResponse({'error': '-1', 'msg': '请先登录'})
+        user_id = request.POST.get('user_id')
         achievement_id = request.POST.get('achievement_id')
-        collect = Collection.objects.filter(achievement_id=achievement_id, user_id=id)
+        collect = Collection.objects.filter(achievement_id=achievement_id, user_id=user_id)
         if collect:
             return JsonResponse({'error': '1003', 'msg': '已收藏'})
         else:
-            collect = Collection.objects.create(achievement_id=achievement_id, user_id=id)
+            collect = Collection.objects.create(achievement_id=achievement_id, user_id=user_id)
             if collect:
                 return JsonResponse({'error': '0', 'msg': '收藏成功'})
             else:
@@ -780,11 +850,12 @@ def collect_achievement(request):
 @csrf_exempt  # 跨域设置
 def cancel_collect_achievement(request):
     if request.method == 'POST':
-        id = check_session(request)
-        if id == 0:
-            return JsonResponse({'error': '-1', 'msg': '请先登录'})
+        # id = check_session(request)
+        # if id == 0:
+        #     return JsonResponse({'error': '-1', 'msg': '请先登录'})
+        user_id = request.POST.get('user_id')
         achievement_id = request.POST.get('achievement_id')
-        collect = Collection.objects.filter(achievement_id=achievement_id, user_id=id)
+        collect = Collection.objects.filter(achievement_id=achievement_id, user_id=user_id)
         if collect:
             collect.delete()
             return JsonResponse({'error': '0', 'msg': '取消收藏成功'})
@@ -798,9 +869,9 @@ def cancel_collect_achievement(request):
 @csrf_exempt  # 跨域设置
 def get_collect_count_by_achievement(request):
     if request.method == 'POST':
-        id = check_session(request)
-        if id == 0:
-            return JsonResponse({'error': '-1', 'msg': '请先登录'})
+        # id = check_session(request)
+        # if id == 0:
+        #     return JsonResponse({'error': '-1', 'msg': '请先登录'})
         achievement_id = request.POST.get('achievement_id')
         collect_count = Collection.objects.filter(achievement_id=achievement_id).count()
         return JsonResponse({'error': '0', 'msg': '获取收藏数成功', 'data': collect_count})
@@ -812,9 +883,9 @@ def get_collect_count_by_achievement(request):
 @csrf_exempt  # 跨域设置
 def get_collect_count_by_user(request):
     if request.method == 'POST':
-        id = check_session(request)
-        if id == 0:
-            return JsonResponse({'error': '-1', 'msg': '请先登录'})
+        # id = check_session(request)
+        # if id == 0:
+        #     return JsonResponse({'error': '-1', 'msg': '请先登录'})
         user_id = request.POST.get('user_id')
         collect_count = Collection.objects.filter(user_id=user_id).count()
         return JsonResponse({'error': '0', 'msg': '获取收藏数成功', 'data': collect_count})
@@ -826,18 +897,39 @@ def get_collect_count_by_user(request):
 @csrf_exempt  # 跨域设置
 def get_collect_list_by_user(request):
     if request.method == 'POST':
-        id = check_session(request)
-        if id == 0:
-            return JsonResponse({'error': '-1', 'msg': '请先登录'})
+        # id = check_session(request)
+        # if id == 0:
+        #     return JsonResponse({'error': '-1', 'msg': '请先登录'})
         user_id = request.POST.get('user_id')
         collect_list = Collection.objects.filter(user_id=user_id)
+        articles = []
         if collect_list:
-            return JsonResponse({'error': '0', 'msg': '获取收藏列表成功', 'data': [
-                {
-                    'achievement_id': collect.achievement_id,
-                    'create_time': collect.create_time.strftime('%Y-%m-%d %H:%M:%S'),
-                } for collect in collect_list
-            ]})
+            for collect in collect_list:
+                achievement = Achievement.objects.get(achievement_id=collect.achievement_id)
+
+                authors = [{
+                    'author_name': author_name,
+                } for author_name in list(filter(None, achievement.author.split('_')))]
+
+                paper_id = achievement.achievement_id
+                paper_title = achievement.name
+                paper_abstract = achievement.intro
+                like_count = Like.objects.filter(achievement_id=achievement.achievement_id).count()
+                comment_count = Comment.objects.filter(achievement_id=achievement.achievement_id).count()
+                collect_count = Collection.objects.filter(achievement_id=achievement.achievement_id).count()
+                is_collect = True
+                articles.append({
+                    'authors': authors,
+                    'paper_id': paper_id,
+                    'paper_title': paper_title,
+                    'paper_abstract': paper_abstract,
+                    'like_count': like_count,
+                    'comment_count': comment_count,
+                    'collect_count': collect_count,
+                    'year': achievement.create_time.year,
+                    'is_collect': is_collect,
+                })
+            return JsonResponse({'error': '0', 'msg': '获取收藏列表成功', 'articles': articles})
         else:
             return JsonResponse({'error': '1002', 'msg': '收藏列表为空'})
     else:
@@ -848,18 +940,39 @@ def get_collect_list_by_user(request):
 @csrf_exempt  # 跨域设置
 def get_collect_list_by_achievement(request):
     if request.method == 'POST':
-        id = check_session(request)
-        if id == 0:
-            return JsonResponse({'error': '-1', 'msg': '请先登录'})
+        # id = check_session(request)
+        # if id == 0:
+        #     return JsonResponse({'error': '-1', 'msg': '请先登录'})
         achievement_id = request.POST.get('achievement_id')
         collect_list = Collection.objects.filter(achievement_id=achievement_id)
+        articles = []
         if collect_list:
-            return JsonResponse({'error': '0', 'msg': '获取收藏列表成功', 'data': [
-                {
-                    'user_id': collect.user_id,
-                    'create_time': collect.create_time.strftime('%Y-%m-%d %H:%M:%S'),
-                } for collect in collect_list
-            ]})
+            for collect in collect_list:
+                achievement = Achievement.objects.get(achievement_id=collect.achievement_id)
+
+                authors = [{
+                    'author_name': author_name,
+                } for author_name in list(filter(None, achievement.author.split('_')))]
+
+                paper_id = achievement.achievement_id
+                paper_title = achievement.name
+                paper_abstract = achievement.intro
+                like_count = Like.objects.filter(achievement_id=achievement.achievement_id).count()
+                comment_count = Comment.objects.filter(achievement_id=achievement.achievement_id).count()
+                collect_count = Collection.objects.filter(achievement_id=achievement.achievement_id).count()
+                is_collect = True
+                articles.append({
+                    'authors': authors,
+                    'paper_id': paper_id,
+                    'paper_title': paper_title,
+                    'paper_abstract': paper_abstract,
+                    'like_count': like_count,
+                    'comment_count': comment_count,
+                    'collect_count': collect_count,
+                    'year': achievement.create_time.year,
+                    'is_collect': is_collect,
+                })
+            return JsonResponse({'error': '0', 'msg': '获取收藏列表成功', 'articles': articles})
         else:
             return JsonResponse({'error': '1002', 'msg': '收藏列表为空'})
     else:
@@ -869,3 +982,101 @@ def get_collect_list_by_achievement(request):
 def index(request):
     # 通过设置时间戳，进行多次访问，可以看到时间戳的变化，就可以得知是否是缓存页面了
     return HttpResponse('当前时间戳：' + str(time.time()))
+
+
+# 高级检索
+@csrf_exempt  # 跨域设置
+def search(request):
+    if request.method == 'POST':
+        # id = check_session(request)
+        # if id == 0:
+        #     return JsonResponse({'error': '-1', 'msg': '请先登录'})
+        # 从json中获取参数
+        json_data = json.loads(request.body)
+        conditions = json_data.get('conditions')
+        min_date = json_data.get('min_date','')
+        max_date = json_data.get('max_date','')
+        # 构造查询条件
+        query = Q()
+        for condition in conditions:
+            category = condition.get('category')
+            content = condition.get('content')
+            type = condition.get('type')
+            if type == '1':
+                if category == 'name':
+                    query &= Q(name__icontains=content)
+                elif category == 'author':
+                    query &= Q(author__icontains='_'+content+'_')
+                elif category == 'intro':
+                    query &= Q(intro__icontains=content)
+                elif category == 'area':
+                    query &= Q(area__icontains=content)
+            elif type == '2':
+                if category == 'name':
+                    query |= Q(name__icontains=content)
+                elif category == 'author':
+                    query |= Q(author__icontains='_'+content+'_')
+                elif category == 'intro':
+                    query |= Q(intro__icontains=content)
+                elif category == 'area':
+                    query |= Q(area__icontains=content)
+            elif type == '3':
+                if category == 'name':
+                    query &= ~Q(name__icontains=content)
+                elif category == 'author':
+                    query &= ~Q(author__icontains='_'+content+'_')
+                elif category == 'intro':
+                    query &= ~Q(intro__icontains=content)
+                elif category == 'area':
+                    query &= ~Q(area__icontains=content)
+        # 构造时间范围
+        if min_date and max_date:
+            query &= Q(create_time__range=(min_date, max_date))
+        elif min_date:
+            query &= Q(create_time__gte=min_date)
+        elif max_date:
+            query &= Q(create_time__lte=max_date)
+        # 查询
+        achievements = Achievement.objects.filter(query)
+        # 返回结果
+        articles = []
+        for achievement in achievements.order_by('-create_time'):
+            authors = []
+            for author_name in list(filter(None, achievement.author.split('_'))):
+                affiliation_id = ''
+                affiliation_name = ''
+                author_id = ''
+                if User.objects.filter(real_name=author_name).exists():
+                    author = User.objects.filter(real_name=author_name).first()
+                    author_id = str(author.user_id)
+                    if Team.objects.filter(team_id=author.team_id).exists():
+                        team = Team.objects.filter(team_id=author.team_id).first()
+                        affiliation_id = str(team.team_id)
+                        affiliation_name = team.name
+                authors.append({
+                    'affiliation_id': affiliation_id,
+                    'affiliation_name': affiliation_name,
+                    'affiliation_order': 1,
+                    'author_id': author_id,
+                    'author_name': author_name,
+                    'order': ""
+                })
+            fields = [{
+                'citation_count': 0,
+                'field_id': '',
+                'level': 1,
+                'main_type': '',
+                'name': area,
+                'paper_count': 0,
+                'rank': 0
+            } for area in list(filter(None, achievement.area.split('_')))]
+            article = {'author_affiliation': [], 'authors': authors, 'fields': fields,
+                       'paper_id': str(achievement.achievement_id), 'paper_title': achievement.name,
+                       'abstract': achievement.intro,
+                       'citation_count': 0, 'comment_count': 0, 'year': 2022, 'reference_count': 0,
+                       'is_collect': True, }
+
+            articles.append(article)
+        return JsonResponse({'error': '0', 'msg': '获取学术成果成功', 'len': len(achievements), 'articles': articles})
+    else:
+        return JsonResponse({'error': '1001', 'msg': '请求方式错误'})

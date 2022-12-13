@@ -3,6 +3,9 @@ from my_app.models import *
 from django.http import JsonResponse
 import re
 from academic.settings import Redis
+import os
+from academic.settings import MEDIA_ROOT
+import random
 
 
 # 简单检索
@@ -10,37 +13,141 @@ from academic.settings import Redis
 def normal_search(request):
     if request.method != 'POST':
         return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
-    id = check_session(request)
-    if id == 0:
-        return JsonResponse({'error': '-1', 'msg': '请先登录'})
-    title = request.POST.get('title')
+    name = request.POST.get('name')
     author = request.POST.get('author')
-    abstract = request.POST.get('abstract')
+    intro = request.POST.get('intro')
     area = request.POST.get('area')
     achievements = Achievement.objects.all()
-    if len(title) > 0:
-        achievements = Achievement.objects.filter(name__contains=title)
-    if len(author) > 0:
-        author_id = User.objects.get(real_name=author).user_id
-        achievements = Achievement.objects.filter(author_id__contains='_'+author_id+'_')
-    if len(abstract) > 0:
-        achievements = Achievement.objects.filter(intro__contains=abstract)
-    if len(area) > 0:
-        achievements = Achievement.objects.filter(area__contains='_'+area+'_')
-    if achievements:
-        return JsonResponse({'error': '0', 'msg': '获取学术成果成功', 'data': [  # 结果按照create_time降序排列
-            {
-                'achievement_id': achievement.achievement_id,
-                'name': achievement.name,
-                # 用'_'分割字符串，去除空，返回列表
-                'author_id': list(filter(None, achievement.author_id.split('_'))),
-                'intro': achievement.intro,
-                'url': achievement.url,
-                'type': achievement.type,
-                # 用'_'分割字符串，去除空，返回列表
-                'area': list(filter(None, achievement.area.split('_'))),
-                'create_time': achievement.create_time.strftime('%Y-%m-%d %H:%M:%S'),
-            } for achievement in achievements.order_by('-create_time')
-        ]})
-    else:
+    if name:
+        achievements = achievements.filter(name__contains=name)
+    if author:
+        achievements = achievements.filter(author__contains='_'+author+'_')
+    if intro:
+        achievements = achievements.filter(intro__contains=intro)
+    if area:
+        achievements = achievements.filter(area__contains='_'+area+'_')
+    if not achievements.first():
         return JsonResponse({'error': '1002', 'msg': '没有检索到学术成果'})
+    articles = []
+    for achievement in achievements.order_by('-create_time'):
+        # authors = []
+        # author = {'affiliation_id': '4654613', 'affiliation_name': '', 'affiliation_order': 1, 'author': '2411226248',
+        #           'author_name': 'Adam Paszke', 'order': "1"}
+        # authors.append(author)
+        authors = []
+        for author_name in list(filter(None, achievement.author.split('_'))):
+            affiliation_id = ''
+            affiliation_name = ''
+            author_id = ''
+            if User.objects.filter(real_name=author_name).exists():
+                author = User.objects.filter(real_name=author_name).first()
+                author_id = str(author.user_id)
+                if Team.objects.filter(team_id=author.team_id).exists():
+                    team = Team.objects.filter(team_id=author.team_id).first()
+                    affiliation_id = str(team.team_id)
+                    affiliation_name = team.name
+            authors.append({
+                'affiliation_id': affiliation_id,
+                'affiliation_name': affiliation_name,
+                'affiliation_order': 1,
+                'author_id': author_id,
+                'author_name': author_name,
+                'order': ""
+            })
+        # fields = []
+        # field = {'citation_count': 0, 'field_id': '', 'level': 1, 'main_type': '', 'name': area, 'paper_count': 0,
+        #          'rank': 0}
+        # fields.append(field)
+        fields = [{
+            'citation_count': 0,
+            'field_id': '',
+            'level': 1,
+            'main_type': '',
+            'name': area,
+            'paper_count': 0,
+            'rank': 0
+        } for area in list(filter(None, achievement.area.split('_')))]
+        article = {'author_affiliation': [], 'authors': authors, 'fields': fields,
+                   'paper_id': str(achievement.achievement_id), 'paper_title': achievement.name, 'abstract': achievement.intro,
+                   'citation_count': 0, 'comment_count': 0, 'year': 2022, 'reference_count': 0, 'is_collect': True, }
+
+        articles.append(article)
+    return JsonResponse({'error': '0', 'msg': '获取学术成果成功', 'len': len(achievements), 'articles': articles})
+
+
+@csrf_exempt
+def file_upload(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
+    file = request.FILES.get("file")
+    if file.name in os.listdir(MEDIA_ROOT):
+        filename = os.path.join(MEDIA_ROOT, str(random.randint(0, 100) * random.randint(0, 100) - random.randint(0, 5)) + file.name)
+    else:
+        filename = os.path.join(MEDIA_ROOT, file.name)
+    print(f"文件所在地址为：{filename}")
+    with open(filename, 'wb') as f:
+        f.write(file.file.read())
+    return JsonResponse({'error': '0', 'msg':'上传成功', 'url':filename})
+
+
+@csrf_exempt
+def search_info(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
+    author_id = request.POST.get('author_id')
+    achievements = Achievement.objects.all()
+    if User.objects.filter(user_id=author_id).exists():
+        user = User.objects.filter(user_id=author_id).first()
+        author_name = user.real_name
+    else:
+        return JsonResponse({'error': '1002', 'msg': '用户不存在'})
+
+    if author_id:
+        achievements = achievements.filter(author__contains='_'+author_name+'_')
+    if not achievements.first():
+        return JsonResponse({'error': '1003', 'msg': '没有检索到学术成果'})
+    articles = []
+    for achievement in achievements.order_by('-create_time'):
+        # authors = []
+        # author = {'affiliation_id': '4654613', 'affiliation_name': '', 'affiliation_order': 1, 'author': '2411226248',
+        #           'author_name': 'Adam Paszke', 'order': "1"}
+        # authors.append(author)
+        authors = []
+        for author_name in list(filter(None, achievement.author.split('_'))):
+            affiliation_id = ''
+            affiliation_name = ''
+            author_id = ''
+            if User.objects.filter(real_name=author_name).exists():
+                author = User.objects.filter(real_name=author_name).first()
+                author_id = str(author.user_id)
+                if Team.objects.filter(team_id=author.team_id).exists():
+                    team = Team.objects.filter(team_id=author.team_id).first()
+                    affiliation_id = str(team.team_id)
+                    affiliation_name = team.name
+            authors.append({
+                'affiliation_id': affiliation_id,
+                'affiliation_name': affiliation_name,
+                'affiliation_order': 1,
+                'author_id': author_id,
+                'author_name': author_name,
+                'order': ""
+            })
+        # fields = []
+        # field = {'citation_count': 0, 'field_id': '', 'level': 1, 'main_type': '', 'name': area, 'paper_count': 0,
+        #          'rank': 0}
+        # fields.append(field)
+        fields = [{
+            'citation_count': 0,
+            'field_id': '',
+            'level': 1,
+            'main_type': '',
+            'name': area,
+            'paper_count': 0,
+            'rank': 0
+        } for area in list(filter(None, achievement.area.split('_')))]
+        article = {'author_affiliation': [], 'authors': authors, 'fields': fields,
+                   'paper_id': str(achievement.achievement_id), 'paper_title': achievement.name, 'abstract': achievement.intro,
+                   'citation_count': 0, 'comment_count': 0, 'year': 2022, 'reference_count': 0, 'is_collect': True, }
+
+        articles.append(article)
+    return JsonResponse({'error': '0', 'msg': '获取学术成果成功', 'len': len(achievements), 'articles': articles})

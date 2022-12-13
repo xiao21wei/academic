@@ -41,4 +41,5 @@ urlpatterns = [
     path('get_collect_list_by_achievement', get_collect_list_by_achievement, name='get_collect_list_by_achievement'),
     path('get_collect_list_by_user', get_collect_list_by_user, name='get_collect_list_by_user'),
     path('index', index, name='index'),
+    path('search', search, name='search'),
 ]

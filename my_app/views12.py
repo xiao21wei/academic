@@ -123,11 +123,16 @@ def logout(request):
 def get_self_information(request):
     if request.method != 'POST':
         return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
-    if not request.session.get('is_login', False):
-        return JsonResponse({'error': '1002', 'msg': '请先登录'})
-    username = request.session.get('user')
-    user = User.objects.get(username=username)
-    return JsonResponse({'error': '0', 'msg': '获取成功', 'data': user.to_json()})
+    user_id = request.POST.get('user_id')
+    user = User.objects.filter(user_id=user_id).first()
+    if user:
+        return JsonResponse({'error': '0', 'msg': '获取成功', 'data': {
+            'username': user.username,
+            'real_name': user.real_name,
+            'email': user.email,
+        }})
+    else:
+        return JsonResponse({'error': '1002', 'msg': '用户不存在'})
 
 
 # 获取他人信息
@@ -166,3 +171,36 @@ def set_intro(request):
     user.intro = intro
     user.save()
     return JsonResponse({'error': '0', 'msg': '设置成功'})
+
+
+# 修改邮箱
+@csrf_exempt
+def change_email(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
+    user_id = request.POST.get('user_id')
+    email = request.POST.get('email')
+    if not check_format_mail(email):
+        return JsonResponse({'error': '1002', 'msg': '邮箱格式错误'})
+    if User.objects.filter(email=email).exists():
+        return JsonResponse({'error': '1003', 'msg': '邮箱已被注册'})
+    user = User.objects.filter(user_id=user_id).first()
+    user.email = email
+    user.save()
+    return JsonResponse({'error': '0', 'msg': '修改成功'})
+
+
+# 修改密码
+@csrf_exempt
+def change_password(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
+    user_id = request.POST.get('user_id')
+    old_password = request.POST.get('old_password')
+    new_password = request.POST.get('new_password')
+    user = User.objects.filter(user_id=user_id).first()
+    if user.password != old_password:
+        return JsonResponse({'error': '1002', 'msg': '密码错误'})
+    user.password = new_password
+    user.save()
+    return JsonResponse({'error': '0', 'msg': '修改成功'})

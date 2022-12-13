@@ -1,4 +1,5 @@
 from django.db import models
+from django import forms
 
 # Create your models here.
 
@@ -12,7 +13,7 @@ class User(models.Model):  # User is a class that inherits from models.Model
     identity = models.IntegerField(unique=False, default=0)
     intro = models.CharField(max_length=256, unique=False, default='未填写')
     penalty = models.BooleanField(default=False)
-    birthday = models.DateField(auto_now_add=True, null=True)
+    birthday = models.DateField(null=True)
     team_id = models.IntegerField(unique=False, null=True)
     real_name = models.CharField(max_length=256, unique=False, default='未填写')
 
@@ -60,12 +61,14 @@ class Admin(models.Model):  # Admin is a class that inherits from models.Model
 class Achievement(models.Model):  # Achievement is a class that inherits from models.Model
     achievement_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=256, unique=True)
-    author_id = models.CharField(max_length=256, unique=False)
+    author = models.CharField(max_length=256, unique=False)
     intro = models.CharField(max_length=256, unique=False, default='未填写')
     url = models.CharField(max_length=256, unique=False, default='未填写')
     create_time = models.DateTimeField(auto_now_add=True)
     type = models.IntegerField(unique=False, default=0)
     area = models.CharField(max_length=256, unique=False, default='未填写')
+    hot = models.IntegerField(unique=False, default=0)
+    recommend = models.BooleanField(default=0)
 
     def __str__(self):
         return self.name
