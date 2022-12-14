@@ -4,7 +4,7 @@ from django.http import JsonResponse
 import re
 from academic.settings import Redis
 import os
-from academic.settings import MEDIA_ROOT
+from academic.settings import MEDIA_ROOT, IMG_URL
 import random
 
 
@@ -87,7 +87,9 @@ def file_upload(request):
     print(f"文件所在地址为：{filename}")
     with open(filename, 'wb') as f:
         f.write(file.file.read())
-    return JsonResponse({'error': '0', 'msg':'上传成功', 'url':filename})
+    # 获取文件的绝对地址
+    file_path = IMG_URL +'home/academic/img/'+file.name
+    return JsonResponse({'error': '0', 'msg': '上传成功', 'url': file_path, 'file_path': file_path})
 
 
 @csrf_exempt
@@ -96,16 +98,19 @@ def search_info(request):
         return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
     author_id = request.POST.get('author_id')
     achievements = Achievement.objects.all()
+    affiliation = '暂无机构'
     if User.objects.filter(user_id=author_id).exists():
         user = User.objects.filter(user_id=author_id).first()
         author_name = user.real_name
+        if Team.objects.filter(team_id=user.team_id).exists():
+            affiliation = Team.objects.filter(team_id=user.team_id).first().name
     else:
         return JsonResponse({'error': '1002', 'msg': '用户不存在'})
 
     if author_id:
         achievements = achievements.filter(author__contains='_'+author_name+'_')
-    if not achievements.first():
-        return JsonResponse({'error': '1003', 'msg': '没有检索到学术成果'})
+    # if not achievements.first():
+    #     return JsonResponse({'error': '0', 'msg': '没有检索到学术成果'})
     articles = []
     for achievement in achievements.order_by('-create_time'):
         # authors = []
@@ -147,7 +152,28 @@ def search_info(request):
         } for area in list(filter(None, achievement.area.split('_')))]
         article = {'author_affiliation': [], 'authors': authors, 'fields': fields,
                    'paper_id': str(achievement.achievement_id), 'paper_title': achievement.name, 'abstract': achievement.intro,
-                   'citation_count': 0, 'comment_count': 0, 'year': 2022, 'reference_count': 0, 'is_collect': True, }
+                   'citation_count': Like.objects.filter(achievement_id=achievement.achievement_id).count(),
+                   'comment_count': 0, 'year': 2022, 'reference_count': 0, 'is_collect': True,
+                   'date': achievement.create_time.date(), }
 
         articles.append(article)
-    return JsonResponse({'error': '0', 'msg': '获取学术成果成功', 'len': len(achievements), 'articles': articles})
+
+    return JsonResponse({'error': '0', 'msg': '获取学术成果成功', 'len': len(achievements), 'articles': articles,
+                         'people': {'author_name': user.real_name, 'affiliation': affiliation, 'email': user.email}})
+
+
+@csrf_exempt
+def authentication(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
+    affiliation = request.POST.get('affiliation')
+    user_id = request.POST.get('user_id')
+    if not User.objects.filter(user_id=user_id).exists():
+        return JsonResponse({'error': '1002', 'msg': '用户不存在'})
+    if not Team.objects.filter(name=affiliation).exists():
+        return JsonResponse({'error': '1003', 'msg': '团队不存在'})
+    user = User.objects.filter(user_id=user_id).first()
+    team = Team.objects.filter(name=affiliation).first()
+    user.team_id = team.team_id
+    user.save()
+    return JsonResponse({'error': '0', 'msg': '认证成功'})

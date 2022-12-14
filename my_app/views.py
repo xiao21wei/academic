@@ -30,14 +30,17 @@ def publish_achievement(request):
         #     return JsonResponse({'error': '-1', 'msg': '请先登录'})
         name = request.POST.get('name')
         # 获取author列表信息，并用'_'拼接成字符串
-        author = '_'.join(request.POST.getlist('author'))
-        author = '_'+author+'_'
+        author = request.POST.get('author')
+        area = request.POST.get('area')
+        # 把author字符串中的','替换成'_'
+        author = author.replace(',', '_')
+        author = '_' + author + '_'
         intro = request.POST.get('intro')
         url = request.POST.get('url')
         type = request.POST.get('type')
         # 获取area列表信息，并用'_'拼接成字符串
-        area = '_'.join(request.POST.getlist('area'))
-        area = '_'+area+'_'
+        area = area.replace(',', '_')
+        area = '_' + area + '_'
         achievement = Achievement(name=name, author=author, intro=intro, url=url, type=type, area=area)
         achievement.save()  # 保存到数据库
         return JsonResponse({'error': '0', 'msg': '学术成果发布成功'})
@@ -93,7 +96,8 @@ def get_achievement(request):
                        'collection_count': Collection.objects.filter(achievement_id=achievement.achievement_id).count(),
                        'like_count': Like.objects.filter(achievement_id=achievement.achievement_id).count(),
                        'reference_count': 0,
-                       'is_collect': True, }
+                       'is_collect': True,
+                       'url': achievement.url, }
             return JsonResponse({'error': '0', 'msg': '获取成功', 'article': article})
         else:
             return JsonResponse({'error': '1002', 'msg': '学术成果不存在'})
@@ -148,7 +152,8 @@ def get_achievements(request):
                            'is_collect': True, }
 
                 articles.append(article)
-            return JsonResponse({'error': '0', 'msg': '获取学术成果成功', 'len': len(achievements), 'articles': articles})
+            return JsonResponse(
+                {'error': '0', 'msg': '获取学术成果成功', 'len': len(achievements), 'articles': articles})
         else:
             return JsonResponse({'error': '1002', 'msg': '学术成果不存在'})
     else:
@@ -173,9 +178,9 @@ def update_achievement(request):
                 url = request.POST.get('url')
                 type = request.POST.get('type')
                 author = '_'.join(request.POST.getlist('author'))
-                author = '_'+author+'_'
+                author = '_' + author + '_'
                 area = '_'.join(request.POST.getlist('area'))
-                area = '_'+area+'_'
+                area = '_' + area + '_'
                 achievement.area = area
                 achievement.name = name
                 achievement.intro = intro
@@ -615,11 +620,16 @@ def like_achievement(request):
         user_id = request.POST.get('user_id')
         achievement_id = request.POST.get('achievement_id')
         like = Like.objects.filter(achievement_id=achievement_id, user_id=user_id)
+
         if like:
             return JsonResponse({'error': '1003', 'msg': '已点赞'})
         else:
             like = Like.objects.create(achievement_id=achievement_id, user_id=user_id)
             if like:
+                achievement = Achievement.objects.filter(achievement_id=achievement_id).first()
+                achievement.hot = achievement.hot + 1
+                achievement.recommend = achievement.recommend + 5
+                achievement.save()
                 return JsonResponse({'error': '0', 'msg': '点赞成功'})
             else:
                 return JsonResponse({'error': '1002', 'msg': '点赞失败'})
@@ -639,6 +649,10 @@ def cancel_like_achievement(request):
         like = Like.objects.filter(achievement_id=achievement_id, user_id=user_id)
         if like:
             like.delete()
+            achievement = Achievement.objects.filter(achievement_id=achievement_id).first()
+            achievement.hot = achievement.hot - 1
+            achievement.recommend = achievement.recommend - 5
+            achievement.save()
             return JsonResponse({'error': '0', 'msg': '取消点赞成功'})
         else:
             return JsonResponse({'error': '1002', 'msg': '未点赞'})
@@ -683,7 +697,7 @@ def get_like_list_by_user(request):
                 } for like in like_list
             ]})
         else:
-            return JsonResponse({'error': '1002', 'msg': '点赞列表为空'})
+            return JsonResponse({'error': '0', 'msg': '点赞列表为空'})
     else:
         return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
 
@@ -765,7 +779,7 @@ def get_comment_list_by_achievement(request):
                 } for comment in comment_list
             ]})
         else:
-            return JsonResponse({'error': '1', 'msg': '评论列表为空'})
+            return JsonResponse({'error': '0', 'msg': '评论列表为空', 'comments': []})
     else:
         return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
 
@@ -839,6 +853,10 @@ def collect_achievement(request):
         else:
             collect = Collection.objects.create(achievement_id=achievement_id, user_id=user_id)
             if collect:
+                achievement = Achievement.objects.filter(achievement_id=achievement_id).first()
+                achievement.hot = achievement.hot + 5
+                achievement.recommend = achievement.recommend + 1
+                achievement.save()
                 return JsonResponse({'error': '0', 'msg': '收藏成功'})
             else:
                 return JsonResponse({'error': '1002', 'msg': '收藏失败'})
@@ -858,6 +876,10 @@ def cancel_collect_achievement(request):
         collect = Collection.objects.filter(achievement_id=achievement_id, user_id=user_id)
         if collect:
             collect.delete()
+            achievement = Achievement.objects.filter(achievement_id=achievement_id).first()
+            achievement.hot = achievement.hot - 5
+            achievement.recommend = achievement.recommend - 1
+            achievement.save()
             return JsonResponse({'error': '0', 'msg': '取消收藏成功'})
         else:
             return JsonResponse({'error': '1002', 'msg': '未收藏'})
@@ -922,7 +944,9 @@ def get_collect_list_by_user(request):
                     'authors': authors,
                     'paper_id': paper_id,
                     'paper_title': paper_title,
-                    'paper_abstract': paper_abstract,
+                    'abstract': paper_abstract,
+                    'citation_count': like_count,
+                    'reference_count': 42,
                     'like_count': like_count,
                     'comment_count': comment_count,
                     'collect_count': collect_count,
@@ -931,7 +955,7 @@ def get_collect_list_by_user(request):
                 })
             return JsonResponse({'error': '0', 'msg': '获取收藏列表成功', 'articles': articles})
         else:
-            return JsonResponse({'error': '1002', 'msg': '收藏列表为空'})
+            return JsonResponse({'error': '0', 'msg': '收藏列表为空', 'articles': []})
     else:
         return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
 
@@ -974,7 +998,7 @@ def get_collect_list_by_achievement(request):
                 })
             return JsonResponse({'error': '0', 'msg': '获取收藏列表成功', 'articles': articles})
         else:
-            return JsonResponse({'error': '1002', 'msg': '收藏列表为空'})
+            return JsonResponse({'error': '0', 'msg': '收藏列表为空', 'articles': []})
     else:
         return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
 
@@ -994,8 +1018,8 @@ def search(request):
         # 从json中获取参数
         json_data = json.loads(request.body)
         conditions = json_data.get('conditions')
-        min_date = json_data.get('min_date','')
-        max_date = json_data.get('max_date','')
+        min_date = json_data.get('min_date', '')
+        max_date = json_data.get('max_date', '')
         # 构造查询条件
         query = Q()
         for condition in conditions:
@@ -1006,7 +1030,7 @@ def search(request):
                 if category == 'name':
                     query &= Q(name__icontains=content)
                 elif category == 'author':
-                    query &= Q(author__icontains='_'+content+'_')
+                    query &= Q(author__icontains='_' + content + '_')
                 elif category == 'intro':
                     query &= Q(intro__icontains=content)
                 elif category == 'area':
@@ -1015,7 +1039,7 @@ def search(request):
                 if category == 'name':
                     query |= Q(name__icontains=content)
                 elif category == 'author':
-                    query |= Q(author__icontains='_'+content+'_')
+                    query |= Q(author__icontains='_' + content + '_')
                 elif category == 'intro':
                     query |= Q(intro__icontains=content)
                 elif category == 'area':
@@ -1024,7 +1048,7 @@ def search(request):
                 if category == 'name':
                     query &= ~Q(name__icontains=content)
                 elif category == 'author':
-                    query &= ~Q(author__icontains='_'+content+'_')
+                    query &= ~Q(author__icontains='_' + content + '_')
                 elif category == 'intro':
                     query &= ~Q(intro__icontains=content)
                 elif category == 'area':
@@ -1078,5 +1102,45 @@ def search(request):
 
             articles.append(article)
         return JsonResponse({'error': '0', 'msg': '获取学术成果成功', 'len': len(achievements), 'articles': articles})
+    else:
+        return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
+
+
+# 查询学术成果是否已点赞和已收藏
+@csrf_exempt  # 跨域设置
+def check_achievement(request):
+    if request.method == 'POST':
+        # id = check_session(request)
+        # if id == 0:
+        #     return JsonResponse({'error': '-1', 'msg': '请先登录'})
+        achievement_id = request.POST.get('achievement_id')
+        user_id = request.POST.get('user_id')
+        # 查询
+        if Achievement.objects.filter(achievement_id=achievement_id).exists():
+            achievement = Achievement.objects.filter(achievement_id=achievement_id).first()
+            is_collect = False
+            is_like = False
+            if Collection.objects.filter(user_id=user_id, achievement_id=achievement_id).exists():
+                is_collect = True
+            if Like.objects.filter(user_id=user_id, achievement_id=achievement_id).exists():
+                is_like = True
+            return JsonResponse({'error': '0', 'msg': '查询成功', 'is_collect': is_collect, 'is_like': is_like})
+        else:
+            return JsonResponse({'error': '1002', 'msg': '学术成果不存在'})
+    else:
+        return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
+
+
+# 获取用户和学术成果总数
+@csrf_exempt  # 跨域设置
+def get_count(request):
+    if request.method == 'POST':
+        # id = check_session(request)
+        # if id == 0:
+        #     return JsonResponse({'error': '-1', 'msg': '请先登录'})
+        user_count = User.objects.all().count()
+        achievement_count = Achievement.objects.all().count()
+        return JsonResponse(
+            {'error': '0', 'msg': '查询成功', 'user_count': user_count, 'achievement_count': achievement_count})
     else:
         return JsonResponse({'error': '1001', 'msg': '请求方式错误'})

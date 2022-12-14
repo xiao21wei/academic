@@ -42,4 +42,6 @@ urlpatterns = [
     path('get_collect_list_by_user', get_collect_list_by_user, name='get_collect_list_by_user'),
     path('index', index, name='index'),
     path('search', search, name='search'),
+    path('check_achievement', check_achievement, name='check_achievement'),
+    path('get_count', get_count, name='get_count'),
 ]

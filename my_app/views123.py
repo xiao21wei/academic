@@ -15,7 +15,7 @@ def send_chat(request):  # 不要给自己发送消息
         id = check_session(request)
         if id == 0:
             return JsonResponse({'error': '-1', 'msg': '请先登录'})
-        send=id
+        send = id
         if receive == send:
             return JsonResponse({'error': '1002', 'msg': '无法给自己发消息'})
 
@@ -107,7 +107,7 @@ def create_team(request):
             return JsonResponse({'error': '-1', 'msg': '请先登录'})
         # 队伍名称
         name = request.POST.get('name')
-        intro= request.POST.get('intro')
+        intro = request.POST.get('intro')
         nowuser = User.objects.get(user_id=id)
 
         team = Team(name=name, intro=intro, user_list=id)
@@ -127,7 +127,7 @@ def invite_member(request):
         if id == 0:
             return JsonResponse({'error': '-1', 'msg': '请先登录'})
         # 被邀请成员id
-        invite_id=request.post.get('invited_id')
+        invite_id = request.post.get('invited_id')
         invite_user = User.objects.get(user_id=invite_id)
         if invite_user.team_id != 'NULL':
             return JsonResponse({'error': '1002', 'msg': '被邀请成员已有团队'})
@@ -137,7 +137,7 @@ def invite_member(request):
             return JsonResponse({'error': '1003', 'msg': '发出邀请者必须已有团队'})
         team = Team.objects.get(team_id=nowuser.team_id)
         invite_user.team_id = team.team_id
-        team.user_list = team.user_list+','+invite_id
+        team.user_list = team.user_list + ',' + invite_id
         team.save()  # 保存到数据库
         invite_user.save()
         return JsonResponse({'error': '0', 'msg': '邀请成功'})
@@ -161,32 +161,24 @@ def change_intro(request):
         leader = namelist[0]
         if leader != id:
             return JsonResponse({'error': '1003', 'msg': '您不是队长'})
-        team.intro=intro
+        team.intro = intro
         team.save()
         return JsonResponse({'error': '0', 'msg': '更改成功'})
     else:
         return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
 
+
 # 热门文章
 @csrf_exempt  # 跨域设置
 def hot_achievement(request):
     if request.method == 'POST':
-        top_articles = list()
-        for ach in Achievement.objects.all():
-            ach.hot = 0
-        for like in Like.objects.all():
-            achievement = Achievement.objects.get(achievement_id=like.achievement_id)
-            achievement.hot = achievement.hot + 1
 
-        for collection in Collection.objects.all():
-            achievement = Achievement.objects.get(achievement_id=collection.achievement_id)
-            achievement.hot = achievement.hot + 2
         # 返回3篇
         achievements = Achievement.objects.all().order_by('-hot')[:3]
+        top_articles = list()
         for achieve in achievements:
-
             order = 0
-            order = order +1
+            order = order + 1
 
             authors = [{
                 'affiliation_id': '',
@@ -197,46 +189,46 @@ def hot_achievement(request):
                 'order': str(order)
             } for author_name in list(filter(None, achieve.author.split('_')))]
 
-            firre ={
-                'authors':authors,
-                'book_title':"book title",
-                'citation_count':str(random.randint(0,7)),
-                'citation_msg':[],
-                'conference':{
-                       'name':"conference name",
-                   },
-                'collect_num':Collection.objects.filter(achievement_id=achieve.achievement_id).count(),
-                'conference_id':"",
-                'date':achieve.create_time.date(),
-                'doctype':'doctype',
-                'fields':[achieve.area],
-                'first_page':"123",
-                'journal':{
-                    'citation_count':str(random.randint(0,17)),
-                    'issn':"",
-                    'journalid':str(achieve.achievement_id),
-                    'name':achieve.name,
-                    'paper_count':"13",
-                    'publisher':"publisher",
-                    'rank':"1",
-                    'webpage':"",
+            firre = {
+                'authors': authors,
+                'book_title': "book title",
+                'citation_count': Like.objects.filter(achievement_id=achieve.achievement_id).count(),
+                'citation_msg': [],
+                'conference': {
+                    'name': "conference name",
                 },
-                'journal_id':str(achieve.achievement_id),
-                'last_page':"12345",
-                'paper_id':str(achieve.achievement_id),
-                'paper_title':achieve.name,
-                'publisher':"publisher",
-                'rank':"1",
-                'reference_count':"2",
-                'volumn':"10",
-                'year':achieve.create_time.year,
-                'abstract':achieve.intro
-                   }
+                'collect_num': Collection.objects.filter(achievement_id=achieve.achievement_id).count(),
+                'conference_id': "",
+                'date': achieve.create_time.date(),
+                'doctype': 'doctype',
+                'fields': [achieve.area],
+                'first_page': "123",
+                'journal': {
+                    'citation_count': str(random.randint(0, 17)),
+                    'issn': "",
+                    'journalid': str(achieve.achievement_id),
+                    'name': achieve.name,
+                    'paper_count': "13",
+                    'publisher': "publisher",
+                    'rank': "1",
+                    'webpage': "",
+                },
+                'journal_id': str(achieve.achievement_id),
+                'last_page': "12345",
+                'paper_id': str(achieve.achievement_id),
+                'paper_title': achieve.name,
+                'publisher': "publisher",
+                'rank': "1",
+                'reference_count': "2",
+                'volumn': "10",
+                'year': achieve.create_time.year,
+                'abstract': achieve.intro
+            }
 
             top_articles.append(firre)
 
         if achievements:
-            return JsonResponse({'error': '0', 'msg': '获取热门学术成果成功','top_articles': top_articles, 'data': [
+            return JsonResponse({'error': '0', 'msg': '获取热门学术成果成功', 'top_articles': top_articles, 'data': [
                 {
                     'achievement_id': achievement.achievement_id,
                     'like': Like.objects.filter(achievement_id=achievement.achievement_id).count(),
@@ -256,21 +248,15 @@ def hot_achievement(request):
             return JsonResponse({'error': '1002', 'msg': '学术成果不存在'})
     else:
         return JsonResponse({'error': '1001', 'msg': '请求方式错误'})
+
+
 # 推荐文章
 @csrf_exempt  # 跨域设置
 def recommend_achievement(request):
     if request.method == 'POST':
-        for ach in Achievement.objects.all():
-            ach.hot = 0
-        for like in Like.objects.all():
-            achievement = Achievement.objects.get(achievement_id=like.achievement_id)
-            achievement.hot = achievement.hot + 4
-
-        for collection in Collection.objects.all():
-            achievement = Achievement.objects.get(achievement_id=collection.achievement_id)
-            achievement.hot = achievement.hot + 1
         # 返回3篇
-        achievements = Achievement.objects.all().order_by('-hot')[:3]
+        achievements = Achievement.objects.all().order_by('-recommend')[:3]
+        top_articles = list()
         for achieve in achievements:
             order = 0
             order = order + 1
@@ -287,7 +273,7 @@ def recommend_achievement(request):
             firre = {
                 'authors': authors,
                 'book_title': "book title",
-                'citation_count': str(random.randint(0, 7)),
+                'citation_count': Like.objects.filter(achievement_id=achieve.achievement_id).count(),
                 'citation_msg': [],
                 'conference': {
                     'name': "conference name"
@@ -319,7 +305,7 @@ def recommend_achievement(request):
                 'year': achieve.create_time.year,
                 'abstract': achieve.intro
             }
-            top_articles = list()
+
             top_articles.append(firre)
 
         if achievements:

@@ -1,6 +1,5 @@
 import os
 import platform
-from elasticsearch import Elasticsearch
 import yaml
 
 ERROR = 0

@@ -122,6 +122,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'django.template.context_processors.media',
             ],
         },
     },
@@ -193,13 +194,14 @@ USE_TZ = False
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/img/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'img').replace('\\', '/')
 
+IMG_URL = ''
 if platform.system() == "Windows":
-    IMG_URL = "127.0.0.1:8000/"
+    IMG_URL = "http://127.0.0.1:8000/"
 else:
-    IMG_URL = "123.249.109.103:8000/"
+    IMG_URL = "http://123.249.109.103:8000/"
 
 Redis = redis.Redis(host=redis_host, port=redis_port, decode_responses=True)
 
